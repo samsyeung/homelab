@@ -1,0 +1,14 @@
+Random notes from setting up home lab
+
+# Disable boot splash 
+https://askubuntu.com/questions/33416/how-do-i-disable-the-boot-splash-screen-and-only-show-kernel-and-boot-text-inst
+
+# Disable GUI on startup
+systemctl set-default multi-user
+
+# Install docker and add me to docker group
+https://docs.docker.com/engine/install/ubuntu/
+usermod -aG docker sam
+
+# Install portainer 
+https://docs.portainer.io/start/install-ce/server/docker/linux

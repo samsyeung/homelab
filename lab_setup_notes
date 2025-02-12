@@ -27,3 +27,4 @@ https://dash.cloudflare.com/87140bc07c36fac85ea0a80448066e4f/yeungs.net
 https://github.com/acmesh-official/acme.sh/wiki/dnsapi
 # Certs in /root/.acme.sh/*.yeungs.net
 
+# Install nginxproxymanager!!! fantastic - use cloudflare api to create letsencrypt certs and proxies

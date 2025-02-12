@@ -8,9 +8,9 @@ Inspired by [makerun/nerdbox](https://gitlab.com/makerun/nerdbox) , my [homelab]
 
 # Service Links (only accessible from internal network)
 Services hosted on lab.yeungs.net
-* [https://openwebui.lab.yeungs.net](openwebui) - openwebui
-* [https://portainer.lab.yeungs.net](portainer) - portainer.io docker ui
-* [https://npm.lab.yeungs.net](npm) - Nginx Proxy Manager
+* [openwebui](https://openwebui.lab.yeungs.net) - openwebui
+* [portainer](https://portainer.lab.yeungs.net) - portainer.io docker ui
+* [npm](https://npm.lab.yeungs.net) - Nginx Proxy Manager
 
 # Proxmox mini pc
 Services hosts on proxmox.yeungs.net

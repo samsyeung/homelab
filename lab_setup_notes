@@ -17,4 +17,13 @@ https://docs.portainer.io/start/install-ce/server/docker/linux
 https://hub.docker.com/r/ollama/ollama
 docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama --restart always
 
+# Configured postfix and setup gmail app password to be able to send email
+https://www.linode.com/docs/guides/configure-postfix-to-send-mail-using-gmail-and-google-workspace-on-debian-or-ubuntu/
+
+# Setup Cloud Flare Zone API Token 
+https://dash.cloudflare.com/87140bc07c36fac85ea0a80448066e4f/yeungs.net
+
+# Configure acme.sh for LetsEncrypt cert renewal
+https://github.com/acmesh-official/acme.sh/wiki/dnsapi
+# Certs in /root/.acme.sh/*.yeungs.net_ecc
 

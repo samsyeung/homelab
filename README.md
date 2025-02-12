@@ -8,13 +8,13 @@ Inspired by [makerun/nerdbox](https://gitlab.com/makerun/nerdbox) , my [homelab]
 
 # Service Links (only accessible from internal network)
 Services hosted on lab.yeungs.net
-* [openwebui](https://openwebui.lab.yeungs.net) - openwebui
-* [portainer](https://portainer.lab.yeungs.net) - portainer.io docker ui
-* [npm](https://npm.lab.yeungs.net) - Nginx Proxy Manager
+* https://openwebui.lab.yeungs.net - openwebui Ollama UI
+* https://portainer.lab.yeungs.net - portainer.io docker ui
+* https://npm.lab.yeungs.net - Nginx Proxy Manager
 
 # Proxmox mini pc
 Services hosts on proxmox.yeungs.net
-* [https://proxmox.yeungs.net](proxmox)
-* [https://homeassistant.yeungs.net](homeassistant)
-* [https://pihole.yeungs.net](pihole)
-* [https://bpm.yeungs.net](npm)
+* https://proxmox.yeungs.net - Proxmox
+* https://homeassistant.yeungs.net - Home assistant
+* http://pihole.yeungs.net/admin - Pi Hole DNS on 192.168.50.135
+* https://npm.yeungs.net - Nginx Proxy Manager for services

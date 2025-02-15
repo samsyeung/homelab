@@ -13,11 +13,12 @@ Services hosted on lab.yeungs.net
 * https://npm.lab.yeungs.net - Nginx Proxy Manager
 * https://zonos.lab.yeungs.net - Zonos voice generator
 
-# Proxmox mini pc lxc using https://tteck.github.io/Proxmox/#monitoring---analytics
+# Proxmox mini pc
+Services mostly LXCs using Helper-Scripts from https://tteck.github.io/Proxmox/
 Services hosts on proxmox.yeungs.net
 * https://proxmox.yeungs.net - Proxmox
 * https://homeassistant.yeungs.net - Home assistant
 * http://pihole.yeungs.net/admin - Pi Hole DNS on 192.168.50.135
 * https://npm.yeungs.net - Nginx Proxy Manager for services
 * http://prometheus.yeungs.net:9090 - Prometheus LXC - script in prometheus/pull_compare_reload.sh to activate new prometheus config
-* https://grafana.yeungs.net - Grafan LXC
+* https://grafana.yeungs.net - Grafana LXC

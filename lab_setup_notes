@@ -35,3 +35,6 @@ https://www.krasamo.com/comfyui-docker/
 
 # Install zonos - a ai voice model
 https://github.com/Zyphra/Zonos
+
+# Installed nvitop, but also nvitop-exporter
+https://github.com/XuehaiPan/nvitop/tree/main/nvitop-exporter/nvitop_exporter - running as user prometheus, and added as service to run on server start

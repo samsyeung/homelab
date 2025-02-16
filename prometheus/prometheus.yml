@@ -40,4 +40,7 @@ scrape_configs:
     - targets:
       - lab.yeungs.net:5050
 
-
+  - job_name: "ipmi_exporter"
+    static_configs:
+    - targets:
+      - lab.yeungs.net:9290

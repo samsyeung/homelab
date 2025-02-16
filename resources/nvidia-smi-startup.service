@@ -1,0 +1,10 @@
+[Unit]
+Description=Set NVIDIA GPUs options on startup
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/root/.local/bin/nvidia-smi-startup.sh
+
+[Install]
+WantedBy=multi-user.target

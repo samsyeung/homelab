@@ -63,3 +63,7 @@ scrape_configs:
     - targets:
       - homeassistant.yeungs.net:8123
 
+  - job_name: "grafana"
+    static_configs:
+    - targets:
+      - 192.168.50.22:3000

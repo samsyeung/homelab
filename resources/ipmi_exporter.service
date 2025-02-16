@@ -1,0 +1,12 @@
+[Unit]
+Description=ipmi_exporter
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/ipmi_exporter
+Restart=on-failure
+WorkingDirectory=/var/lib/prometheus
+User=prometheus
+
+[Install]
+WantedBy=multi-user.target

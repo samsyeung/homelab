@@ -12,3 +12,9 @@ My shopping list
 | PCIe Riser cables | Coolermaster PCIe4 20cm Riser cables | |
 | Case | Ebay GPU Frame | |
 | Power Supply | T.F.Skywindl 2000W modular | |
+
+My home lab was encouraged and inspired by [makerun/nerdbox](https://gitlab.com/makerun/nerdbox) . 
+
+It was build primarily to setup and learn about AI.  
+
+![home lab photo](assets/IMG_6425.jpg "Home Lab Photo")

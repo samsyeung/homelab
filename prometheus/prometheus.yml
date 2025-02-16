@@ -58,7 +58,7 @@ scrape_configs:
   - job_name: "homeassistant"
     metrics_path: /api/prometheus
     authorization:
-      credentials: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4N2UyYWM0YzY4NWY0NWE1YTQxODgxNTYxN2Q1MWM0MiIsImlhdCI6MTczOTc0NDY3NSwiZXhwIjoyMDU1MTA0Njc1fQ.HITTjz-P9J5nfbFrXTsKB_un1Tq8mJwOYMYi3qzKeiE
+      credentials_file: homeassistant_credentials 
     static_configs:
     - targets:
       - homeassistant.yeungs.net:8123

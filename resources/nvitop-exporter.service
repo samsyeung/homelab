@@ -3,7 +3,7 @@ Description=nvitop-exporter
 After=network.target
 
 [Service]
-ExecStart=pipx run nvitop-exporter --bind-address 0.0.0.0 --port 5050
+ExecStart=pipx run nvitop-exporter --bind-address 0.0.0.0 --port 5050 --hostname lab.yeungs.net
 Restart=on-failure
 WorkingDirectory=/var/lib/prometheus
 User=prometheus

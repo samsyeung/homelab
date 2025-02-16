@@ -54,3 +54,6 @@ https://docs.docker.com/engine/daemon/prometheus/
 # setup cAdvisor docker
 https://github.com/google/cadvisor
 
+# Install tapo exporter 
+https://github.com/tess1o/go-tapo-exporter
+

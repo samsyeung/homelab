@@ -27,7 +27,7 @@ scrape_configs:
 
     static_configs:
       - targets: 
-        - proxmox.yeungs.net:9090
+        - prometheus.yeungs.net:9090
 
   - job_name: "node"
     static_configs:
@@ -62,3 +62,4 @@ scrape_configs:
     static_configs:
     - targets:
       - homeassistant.yeungs.net:8123
+

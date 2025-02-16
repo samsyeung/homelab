@@ -38,3 +38,9 @@ https://github.com/Zyphra/Zonos
 
 # Installed nvitop, but also nvitop-exporter
 https://github.com/XuehaiPan/nvitop/tree/main/nvitop-exporter/nvitop_exporter - running as user prometheus, and added as service to run on server start
+
+# Install ipmi_exporter
+https://github.com/prometheus-community/ipmi_exporter
+```GOBIN=/usr/local/bin/ go install github.com/prometheus-community/ipmi_exporter@latest```
+and added it as a service to run a prometheus on service start
+```

@@ -1,0 +1,12 @@
+services:
+  go-tapo-exporter:
+    image: tess1o/go-tapo-exporter:latest
+    container_name: go_tapo_exporter
+    volumes:
+      - ./config.json:/app/config.json:ro
+    ports:
+      - 8086:8086
+    environment:
+      - TAPO_EMAIL=CHANGE_ME
+      - TAPO_PASSWORD=CHANGE_ME
+      - TAPO_CONFIG_LOCATION=/app/config.json

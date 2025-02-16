@@ -6,7 +6,9 @@ Inspired by [makerun/nerdbox](https://gitlab.com/makerun/nerdbox) , my [homelab]
 * [os.md](os.md) list details of the operating system install (Ubuntu Desktop) and tuning.
 * [lab_setup_notes](lab_setup_notes) a random collection of links for tools set up.
 
-# Service Links (only accessible from internal network)
+*__Note that these URLs are only accessible on my home network__*
+
+# Lab services
 Services hosted on lab.yeungs.net
 * https://openwebui.lab.yeungs.net - openwebui Ollama UI
 * https://portainer.lab.yeungs.net - portainer.io docker ui

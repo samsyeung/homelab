@@ -53,6 +53,7 @@ https://docs.docker.com/engine/daemon/prometheus/
 
 # setup cAdvisor docker
 https://github.com/google/cadvisor
+The default container will each up 10% of a core.  Found this [comment](https://github.com/google/cadvisor/issues/2523#issuecomment-2258042352) which resolves this by adding `-store_container_labels=false -docker_only=true -housekeeping_interval=30s` to command
 
 # Configure homeassistant prometheus exporter
 https://www.home-assistant.io/integrations/prometheus/

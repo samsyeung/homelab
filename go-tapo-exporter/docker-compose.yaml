@@ -7,6 +7,6 @@ services:
     ports:
       - 8086:8086
     environment:
-      - TAPO_EMAIL=CHANGE_ME
-      - TAPO_PASSWORD=CHANGE_ME
+      - TAPO_EMAIL=sam@yeungs.net
+      - TAPO_PASSWORD=Blue3bumBum!!
       - TAPO_CONFIG_LOCATION=/app/config.json

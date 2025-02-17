@@ -4,7 +4,7 @@ Inspired by [makerun/nerdbox](https://gitlab.com/makerun/nerdbox) , my [homelab]
 
 * [homelab.md](homelab.md) lists details of the hardware, and some lessons learned during its build.
 * [os.md](os.md) list details of the operating system install (Ubuntu Desktop) and tuning.
-* [lab_setup_notes.md](lab_setup_notes.md) a random collection of links for tools set up.
+* [lab_setup_notes](lab_setup_notes) a random collection of links for tools set up.
 
 *__Note that these URLs are only accessible on my home network__*
 

@@ -1,5 +1,11 @@
 #!/bin/sh
-/usr/bin/nvidia-smi -i 0 -pm 1
-/usr/bin/nvidia-smi -i 1 -pm 1
-/usr/bin/nvidia-smi -i 0 -lgc 0,1600
-/usr/bin/nvidia-smi -i 1 -lgc 0,1600
+
+#lock gpu clock min,max
+lgc=0,1600
+
+#persistence mode 0 or 1
+pm=1
+for i in $(/usr/bin/nvidia-smi --query-gpu=index --format=csv,noheader,nounits); do
+        /usr/bin/nvidia-smi -i $i -pm $pm
+        /usr/bin/nvidia-smi -i $i -lgc $lgc
+done

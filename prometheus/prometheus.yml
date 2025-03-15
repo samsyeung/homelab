@@ -68,3 +68,9 @@ scrape_configs:
     static_configs:
     - targets:
       - 192.168.50.22:3000
+
+  - job_name: "nvidia_gpu_exporter"
+    static_configs:
+    - targets:
+      - 192.168.50.200:9835
+

@@ -75,3 +75,8 @@ scrape_configs:
     - targets:
       - 192.168.50.200:9835
 
+  - job_name: "windows_exporter"
+    static_configs:
+    - targets:
+      - 192.168.50.200:9115
+

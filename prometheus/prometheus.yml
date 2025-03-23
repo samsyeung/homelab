@@ -74,6 +74,7 @@ scrape_configs:
     static_configs:
     - targets:
       - 192.168.50.201:9835
+      - lab.yeungs.net:9835
 
   - job_name: "windows_exporter"
     static_configs:

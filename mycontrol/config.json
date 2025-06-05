@@ -1,0 +1,18 @@
+{
+  "port": 5010,
+  "ipmitool_path": "ipmitool",
+  "grafana_dashboard_urls": [
+    {
+      "name": "NVItop Dashboard",
+      "url": "https://grafana.yeungs.net/d-solo/bdl3vqwxprhtsa/nvitop-dashboard?orgId=1&from=1749159200482&to=1749161000482&timezone=browser&var-hostname=$__all&var-username=$__all&refresh=10s&panelId=20&__feature.dashboardSceneSolo%22%20width=%22450%22%20height=%22200%22%20frameborder=%220%22"
+    }
+  ],
+  "hosts": [
+    {
+      "name": "Lab Server",
+      "hostname": "192.168.50.246",
+      "username": "admin",
+      "password": "samyeung"
+    }
+  ]
+}

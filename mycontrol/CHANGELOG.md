@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Application screenshot in README showing interface and features
+- Documentation images directory structure
+
 ### Changed
 - Improved project structure by moving utility modules to `utils/` subdirectory
 - Cleaner root directory with better organization
+- Enhanced README with visual application preview
 
 ### Added
 - SSH uptime monitoring functionality

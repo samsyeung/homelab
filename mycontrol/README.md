@@ -16,6 +16,16 @@ A Flask web application for monitoring remote host power status via IPMI.
 - Comprehensive logging with log rotation
 - Background process management
 
+### Application Interface
+
+![MyControl Application Screenshot](docs/images/app-screenshot.png)
+
+The application provides a clean, modern web interface featuring:
+- **Host Status Cards**: Display server name, power state, and system uptime with load averages
+- **Real-time Monitoring**: Auto-refresh functionality keeps information current
+- **Integrated Dashboards**: Embedded Grafana charts for GPU utilization, temperature monitoring, and other system metrics
+- **Responsive Design**: Clean 2-column layout that adapts to different screen sizes
+
 ## Setup
 
 1. Use the control script (recommended):
@@ -95,6 +105,8 @@ mycontrol/
 ├── utils/              # Utility modules
 │   ├── ssh_utils.py    # SSH functionality
 │   └── grafana_utils.py # Grafana dashboard processing
+├── docs/               # Documentation and assets
+│   └── images/         # Screenshots and images
 ├── logs/               # Application logs
 └── venv/               # Python virtual environment
 ```

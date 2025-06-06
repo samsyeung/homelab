@@ -8,7 +8,7 @@ A Flask web application for monitoring remote host power status via IPMI.
 - Power on hosts remotely via IPMI when they are powered off
 - Query IPMI using lanplus protocol
 - Configuration via JSON file
-- Auto-refresh every 30 seconds
+- Configurable auto-refresh interval
 - Clean web interface with status indicators
 - Automated startup script with virtual environment management
 - Comprehensive logging with log rotation
@@ -33,8 +33,19 @@ Update `config.json` with your host details:
 ```json
 {
   "port": 5010,
+  "refresh_interval": 30,
   "ipmitool_path": "ipmitool",
-  "grafana_dashboard_url": "https://grafana.yeungs.net/d-solo/bdl3vqwxprhtsa/nvitop-dashboard?orgId=1&timezone=browser&var-hostname=$__all&var-username=$__all&refresh=10s&panelId=20&__feature.dashboardSceneSolo",
+  "grafana_dashboard_urls": [
+    {
+      "name": "GPU Usage",
+      "url": "https://grafana.yeungs.net/d-solo/dashboard-id?panelId=20",
+      "height": 300
+    },
+    {
+      "url": "https://grafana.yeungs.net/d-solo/dashboard-id?panelId=21",
+      "height": 200
+    }
+  ],
   "hosts": [
     {
       "name": "Server Name",
@@ -49,8 +60,12 @@ Update `config.json` with your host details:
 ### Configuration Options
 
 - `port`: Web server listening port (default: 5010)
+- `refresh_interval`: Auto-refresh interval in seconds (default: 30)
 - `ipmitool_path`: Path to ipmitool binary (default: "ipmitool")
-- `grafana_dashboard_url`: URL to Grafana dashboard panel (optional)
+- `grafana_dashboard_urls`: Array of Grafana dashboard configurations (optional)
+  - `name`: Display name for the dashboard (optional - if omitted, no header is shown)
+  - `url`: URL to Grafana dashboard panel
+  - `height`: Height of the iframe in pixels (default: 400)
 - `hosts`: Array of host configurations
 
 ## Prerequisites

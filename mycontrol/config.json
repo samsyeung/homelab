@@ -1,14 +1,19 @@
 {
   "port": 5010,
+  "refresh_interval": 30,
   "ipmitool_path": "ipmitool",
   "grafana_dashboard_urls": [
     {
-      "name": "GPU Usage",
-      "url": "https://grafana.yeungs.net/d-solo/bdl3vqwxprhtsa/nvitop-dashboard?orgId=1&from=1749159200482&to=1749161000482&timezone=browser&var-hostname=$__all&var-username=$__all&refresh=10s&panelId=20&__feature.dashboardSceneSolo%22%20width=%22450%22%20height=%22200%22%20frameborder=%220%22"
+      "url": "https://grafana.yeungs.net/d-solo/bdl3vqwxprhtsa/nvitop-dashboard?orgId=1&from=1749159200482&to=1749161000482&timezone=browser&var-hostname=$__all&var-username=$__all&refresh=10s&panelId=20&__feature.dashboardSceneSolo%22%20width=%22450%22%20height=%22200%22%20frameborder=%220%22",
+      "height": 200
     },
     {
-      "name": "GPU Temperature",
-      "url": "https://grafana.yeungs.net/d-solo/bdl3vqwxprhtsa/nvitop-dashboard?orgId=1&from=1749159200482&to=1749161000482&timezone=browser&var-hostname=$__all&var-username=$__all&refresh=10s&panelId=27&__feature.dashboardSceneSolo%22%20width=%22450%22%20height=%22200%22%20frameborder=%220%22"
+      "url": "https://grafana.yeungs.net/d-solo/bdl3vqwxprhtsa/nvitop-dashboard?orgId=1&from=1749159200482&to=1749161000482&timezone=browser&var-hostname=$__all&var-username=$__all&refresh=10s&panelId=27&__feature.dashboardSceneSolo%22%20width=%22450%22%20height=%22200%22%20frameborder=%220%22",
+      "height": 200
+    },
+    {
+      "url": "https://grafana.yeungs.net/d-solo/bdl3vqwxprhtsa/nvitop-dashboard?orgId=1&from=1749159200482&to=1749161000482&timezone=browser&var-hostname=$__all&var-username=$__all&refresh=10s&panelId=26&__feature.dashboardSceneSolo%22%20width=%22450%22%20height=%22200%22%20frameborder=%220%22",
+      "height": 200
     }
   ],
   "hosts": [

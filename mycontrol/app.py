@@ -133,6 +133,36 @@ def get_power_status(hostname, username, password, ipmitool_path='ipmitool'):
         app.logger.error(f"Error checking power status for {hostname}: {e}")
         return 'error'
 
+def power_on_host(hostname, username, password, ipmitool_path='ipmitool'):
+    try:
+        cmd = [
+            ipmitool_path, '-I', 'lanplus', 
+            '-H', hostname,
+            '-U', username,
+            '-P', password,
+            'chassis', 'power', 'on'
+        ]
+        
+        app.logger.info(f"Powering on {hostname}")
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        
+        if result.returncode == 0:
+            app.logger.info(f"{hostname}: Power on command successful")
+            return {'success': True, 'message': 'Power on command sent successfully'}
+        else:
+            app.logger.error(f"Power on command failed for {hostname}: {result.stderr}")
+            return {'success': False, 'message': f'Power on failed: {result.stderr}'}
+            
+    except subprocess.TimeoutExpired:
+        app.logger.error(f"Power on timeout for {hostname}")
+        return {'success': False, 'message': 'Command timeout'}
+    except FileNotFoundError:
+        app.logger.error(f"ipmitool not found at path: {ipmitool_path}")
+        return {'success': False, 'message': 'ipmitool not found'}
+    except Exception as e:
+        app.logger.error(f"Error powering on {hostname}: {e}")
+        return {'success': False, 'message': f'Error: {str(e)}'}
+
 @app.route('/')
 def index():
     config = load_config()
@@ -144,8 +174,9 @@ def index():
     updated_dashboards = []
     for dashboard in grafana_dashboards:
         updated_dashboard = {
-            'name': dashboard.get('name', 'Dashboard'),
-            'url': update_grafana_time_params(dashboard.get('url', ''))
+            'name': dashboard.get('name'),
+            'url': update_grafana_time_params(dashboard.get('url', '')),
+            'height': dashboard.get('height', 400)
         }
         updated_dashboards.append(updated_dashboard)
     
@@ -167,7 +198,9 @@ def index():
             'status': status
         })
     
-    return render_template('index.html', hosts=host_status, grafana_dashboards=updated_dashboards)
+    refresh_interval = config.get('refresh_interval', 30)
+    
+    return render_template('index.html', hosts=host_status, grafana_dashboards=updated_dashboards, refresh_interval=refresh_interval)
 
 @app.route('/api/status')
 def api_status():
@@ -194,6 +227,37 @@ def api_status():
         })
     
     return jsonify({'hosts': host_status})
+
+@app.route('/api/power-on/<hostname>', methods=['POST'])
+def api_power_on(hostname):
+    config = load_config()
+    hosts = config.get('hosts', [])
+    ipmitool_path = config.get('ipmitool_path', 'ipmitool')
+    
+    # Find the host in config
+    target_host = None
+    for host in hosts:
+        if host.get('hostname') == hostname:
+            target_host = host
+            break
+    
+    if not target_host:
+        return jsonify({'success': False, 'message': 'Host not found in configuration'}), 404
+    
+    # Extract credentials
+    username = target_host.get('username')
+    password = target_host.get('password')
+    
+    if not username or not password:
+        return jsonify({'success': False, 'message': 'Missing credentials in configuration'}), 400
+    
+    # Attempt to power on
+    result = power_on_host(hostname, username, password, ipmitool_path)
+    
+    if result['success']:
+        return jsonify(result), 200
+    else:
+        return jsonify(result), 500
 
 if __name__ == '__main__':
     config = load_config()

@@ -7,8 +7,8 @@ import logging
 import os
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
-from ssh_utils import get_host_uptimes
-from grafana_utils import process_dashboards
+from utils.ssh_utils import get_host_uptimes
+from utils.grafana_utils import process_dashboards
 
 class DeduplicatingHandler(logging.Handler):
     """A logging handler that prevents duplicate log messages"""

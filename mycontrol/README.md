@@ -82,6 +82,23 @@ Update `config.json` with your host details:
   - `ssh_username`: SSH username (optional)
   - `ssh_password`: SSH password (optional)
 
+## Project Structure
+
+```
+mycontrol/
+├── app.py              # Main Flask application
+├── config.json         # Configuration file
+├── control.sh          # Service control script
+├── requirements.txt    # Python dependencies
+├── templates/          # HTML templates
+│   └── index.html
+├── utils/              # Utility modules
+│   ├── ssh_utils.py    # SSH functionality
+│   └── grafana_utils.py # Grafana dashboard processing
+├── logs/               # Application logs
+└── venv/               # Python virtual environment
+```
+
 ## Prerequisites
 
 Ensure `ipmitool` is installed on your system:

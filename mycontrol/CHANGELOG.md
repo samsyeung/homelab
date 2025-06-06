@@ -10,11 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Application screenshot in README showing interface and features
 - Documentation images directory structure
+- `config.json.example` template with sample configuration
+- `.gitignore` file to protect sensitive configuration
+- Enhanced security documentation
 
 ### Changed
 - Improved project structure by moving utility modules to `utils/` subdirectory
 - Cleaner root directory with better organization
 - Enhanced README with visual application preview
+- Setup process now uses example configuration file for security
+- Removed actual configuration file from version control
+
+### Security
+- **BREAKING**: `config.json` is no longer tracked in git for security
+- Users must create `config.json` from the provided example template
+- Added comprehensive security notes and best practices
 
 ### Added
 - SSH uptime monitoring functionality

@@ -28,12 +28,18 @@ The application provides a clean, modern web interface featuring:
 
 ## Setup
 
-1. Use the control script (recommended):
+1. **Create your configuration file**:
+```bash
+cp config.json.example config.json
+# Edit config.json with your actual host details and credentials
+```
+
+2. **Start the application** (recommended):
 ```bash
 ./control.sh
 ```
 
-2. Manual setup:
+3. **Manual setup** (alternative):
 ```bash
 pip install -r requirements.txt
 python app.py
@@ -41,37 +47,13 @@ python app.py
 
 ## Configuration
 
-Update `config.json` with your host details:
-```json
-{
-  "port": 5010,
-  "refresh_interval": 30,
-  "ssh_timeout": 10,
-  "ipmitool_path": "ipmitool",
-  "grafana_dashboard_urls": [
-    {
-      "name": "GPU Usage",
-      "url": "https://grafana.yeungs.net/d-solo/dashboard-id?panelId=20",
-      "height": 300
-    },
-    {
-      "url": "https://grafana.yeungs.net/d-solo/dashboard-id?panelId=21",
-      "height": 200
-    }
-  ],
-  "hosts": [
-    {
-      "name": "Server Name",
-      "ipmi_host": "192.168.1.100",
-      "ipmi_username": "ipmi_user",
-      "ipmi_password": "ipmi_password",
-      "ssh_host": "192.168.1.100",
-      "ssh_username": "user",
-      "ssh_password": "password"
-    }
-  ]
-}
+The application uses `config.json` for configuration. Start by copying the example:
+
+```bash
+cp config.json.example config.json
 ```
+
+Then edit `config.json` with your actual server details. See `config.json.example` for a complete configuration template with multiple hosts and dashboard examples.
 
 ### Configuration Options
 
@@ -97,9 +79,11 @@ Update `config.json` with your host details:
 ```
 mycontrol/
 ├── app.py              # Main Flask application
-├── config.json         # Configuration file
+├── config.json.example # Example configuration file
+├── config.json         # Your configuration (create from example)
 ├── control.sh          # Service control script
 ├── requirements.txt    # Python dependencies
+├── .gitignore          # Git ignore rules
 ├── templates/          # HTML templates
 │   └── index.html
 ├── utils/              # Utility modules
@@ -107,8 +91,8 @@ mycontrol/
 │   └── grafana_utils.py # Grafana dashboard processing
 ├── docs/               # Documentation and assets
 │   └── images/         # Screenshots and images
-├── logs/               # Application logs
-└── venv/               # Python virtual environment
+├── logs/               # Application logs (auto-created)
+└── venv/               # Python virtual environment (auto-created)
 ```
 
 ## Prerequisites
@@ -166,6 +150,10 @@ The control script:
 - Provides process management commands
 - Logs to both file and console
 
-## Security Note
+## Security Notes
 
-Update the default credentials in `config.json` before use.
+- **Never commit `config.json`** to version control as it contains sensitive credentials
+- Update all default passwords and usernames in your `config.json`
+- Use strong, unique passwords for IPMI and SSH access
+- Consider using SSH keys instead of passwords for SSH connections
+- Restrict network access to the MyControl web interface (port 5010 by default)

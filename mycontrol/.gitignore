@@ -1,0 +1,18 @@
+# Local configuration file with sensitive credentials
+config.json
+
+# Python cache and virtual environment
+__pycache__/
+*.pyc
+*.pyo
+venv/
+
+# Application logs
+logs/
+*.log
+
+# Process ID file
+*.pid
+
+# macOS system files
+.DS_Store

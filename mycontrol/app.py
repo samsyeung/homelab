@@ -10,6 +10,38 @@ from logging.handlers import RotatingFileHandler
 from ssh_utils import get_host_uptimes
 from grafana_utils import process_dashboards
 
+class DeduplicatingHandler(logging.Handler):
+    """A logging handler that prevents duplicate log messages"""
+    
+    def __init__(self, target_handler):
+        super().__init__()
+        self.target_handler = target_handler
+        self.recent_messages = {}
+        self.max_age = 1.0  # Consider messages within 1 second as duplicates
+        
+    def emit(self, record):
+        import time
+        current_time = time.time()
+        message_key = (record.levelno, record.getMessage())
+        
+        # Clean old messages
+        self.recent_messages = {
+            k: v for k, v in self.recent_messages.items() 
+            if current_time - v < self.max_age
+        }
+        
+        # Check if this is a duplicate
+        if message_key not in self.recent_messages:
+            self.recent_messages[message_key] = current_time
+            self.target_handler.emit(record)
+    
+    def setFormatter(self, formatter):
+        self.target_handler.setFormatter(formatter)
+        
+    def setLevel(self, level):
+        super().setLevel(level)
+        self.target_handler.setLevel(level)
+
 app = Flask(__name__)
 
 def setup_logging():
@@ -18,44 +50,43 @@ def setup_logging():
     
     log_file = logs_dir / 'mycontrol.log'
     
-    # Create a custom formatter that prevents duplicates
-    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+    # Disable all existing logging completely
+    logging.disable(logging.NOTSET)  # Re-enable logging
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
     
-    # File handler
+    # Clear all loggers
+    for logger_name in list(logging.Logger.manager.loggerDict.keys()):
+        logger = logging.getLogger(logger_name)
+        logger.handlers.clear()
+        logger.disabled = True
+    
+    # Create file handler
     file_handler = RotatingFileHandler(
         log_file, 
         maxBytes=10*1024*1024,  # 10MB
         backupCount=5
     )
-    file_handler.setFormatter(formatter)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
     
-    # Console handler  
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    
-    # Clear ALL existing loggers to start fresh
-    for logger_name in logging.Logger.manager.loggerDict:
-        logger = logging.getLogger(logger_name)
-        logger.handlers.clear()
-        logger.propagate = True
-    
-    # Configure root logger only
-    root_logger = logging.getLogger()
-    root_logger.handlers.clear()
-    root_logger.addHandler(file_handler)
-    root_logger.addHandler(console_handler)  
-    root_logger.setLevel(logging.INFO)
-    
-    # Make sure Flask app logger doesn't have its own handlers
+    # Configure Flask app logger
     app.logger.handlers.clear()
-    app.logger.propagate = True
-    app.logger.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
     
-    # Quiet noisy loggers
-    logging.getLogger('asyncssh').setLevel(logging.WARNING)
-    logging.getLogger('werkzeug').setLevel(logging.WARNING)
+    # Add console handler only if running interactively (not via control script)
+    if os.getenv('MYCONTROL_INTERACTIVE', '').lower() == 'true':
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
+        app.logger.addHandler(console_handler)
+    
+    app.logger.setLevel(logging.INFO)
+    app.logger.propagate = False  # Critical: don't propagate
+    app.logger.disabled = False
+    
+    # Disable werkzeug logging completely
+    logging.getLogger('werkzeug').disabled = True
 
-setup_logging()
+logger = setup_logging()
 
 
 def load_config():
@@ -64,10 +95,10 @@ def load_config():
         with open(config_path, 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        logging.error(f"Config file not found: {config_path}")
+        app.logger.error(f"Config file not found: {config_path}")
         return {}
     except json.JSONDecodeError:
-        logging.error(f"Invalid JSON in config file: {config_path}")
+        app.logger.error(f"Invalid JSON in config file: {config_path}")
         return {}
 
 def get_power_status(hostname, username, password, ipmitool_path='ipmitool'):

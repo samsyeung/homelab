@@ -6,6 +6,9 @@ import json
 import logging
 import os
 import time
+import asyncio
+import asyncssh
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
@@ -163,11 +166,47 @@ def power_on_host(hostname, username, password, ipmitool_path='ipmitool'):
         app.logger.error(f"Error powering on {hostname}: {e}")
         return {'success': False, 'message': f'Error: {str(e)}'}
 
+async def get_ssh_uptime(ssh_host, ssh_username, ssh_password, timeout=10):
+    """Get uptime via SSH connection"""
+    try:
+        async with asyncssh.connect(
+            ssh_host,
+            username=ssh_username,
+            password=ssh_password,
+            known_hosts=None,
+            client_keys=None
+        ) as conn:
+            result = await asyncio.wait_for(
+                conn.run('uptime', check=True),
+                timeout=timeout
+            )
+            return result.stdout.strip()
+    except asyncio.TimeoutError:
+        return 'SSH timeout'
+    except asyncssh.Error as e:
+        return f'SSH error: {str(e)}'
+    except Exception as e:
+        return f'Error: {str(e)}'
+
+def get_uptime_sync(ssh_host, ssh_username, ssh_password, timeout=10):
+    """Synchronous wrapper for async SSH uptime"""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(
+            get_ssh_uptime(ssh_host, ssh_username, ssh_password, timeout)
+        )
+    except Exception as e:
+        return f'Error: {str(e)}'
+    finally:
+        loop.close()
+
 @app.route('/')
 def index():
     config = load_config()
     hosts = config.get('hosts', [])
     ipmitool_path = config.get('ipmitool_path', 'ipmitool')
+    ssh_timeout = config.get('ssh_timeout', 10)
     grafana_dashboards = config.get('grafana_dashboard_urls', [])
     
     # Update Grafana URL time parameters for all dashboards
@@ -180,23 +219,54 @@ def index():
         }
         updated_dashboards.append(updated_dashboard)
     
-    host_status = []
-    for host in hosts:
-        hostname = host.get('hostname')
-        username = host.get('username')
-        password = host.get('password')
-        name = host.get('name', hostname)
+    # Use ThreadPoolExecutor to run SSH commands in parallel
+    with ThreadPoolExecutor(max_workers=len(hosts)) as executor:
+        host_status = []
+        futures = []
         
-        if hostname and username and password:
-            status = get_power_status(hostname, username, password, ipmitool_path)
-        else:
-            status = 'config_error'
+        for host in hosts:
+            ipmi_host = host.get('ipmi_host')
+            ipmi_username = host.get('ipmi_username')
+            ipmi_password = host.get('ipmi_password')
+            ssh_host = host.get('ssh_host')
+            ssh_username = host.get('ssh_username')
+            ssh_password = host.get('ssh_password')
+            name = host.get('name', ipmi_host or ssh_host)
             
-        host_status.append({
-            'name': name,
-            'hostname': hostname,
-            'status': status
-        })
+            # Get power status
+            if ipmi_host and ipmi_username and ipmi_password:
+                power_status = get_power_status(ipmi_host, ipmi_username, ipmi_password, ipmitool_path)
+            else:
+                power_status = 'config_error'
+            
+            # Submit SSH uptime task
+            if ssh_host and ssh_username and ssh_password:
+                uptime_future = executor.submit(get_uptime_sync, ssh_host, ssh_username, ssh_password, ssh_timeout)
+            else:
+                uptime_future = None
+            
+            futures.append((host, power_status, uptime_future))
+        
+        # Collect results
+        for host, power_status, uptime_future in futures:
+            ipmi_host = host.get('ipmi_host')
+            ssh_host = host.get('ssh_host')
+            name = host.get('name', ipmi_host or ssh_host)
+            
+            if uptime_future:
+                try:
+                    uptime = uptime_future.result(timeout=ssh_timeout + 1)
+                except Exception as e:
+                    uptime = f'Error: {str(e)}'
+            else:
+                uptime = 'No SSH config'
+            
+            host_status.append({
+                'name': name,
+                'hostname': ipmi_host or ssh_host,
+                'status': power_status,
+                'uptime': uptime
+            })
     
     refresh_interval = config.get('refresh_interval', 30)
     
@@ -207,24 +277,56 @@ def api_status():
     config = load_config()
     hosts = config.get('hosts', [])
     ipmitool_path = config.get('ipmitool_path', 'ipmitool')
+    ssh_timeout = config.get('ssh_timeout', 10)
     
-    host_status = []
-    for host in hosts:
-        hostname = host.get('hostname')
-        username = host.get('username')
-        password = host.get('password')
-        name = host.get('name', hostname)
+    # Use ThreadPoolExecutor to run SSH commands in parallel
+    with ThreadPoolExecutor(max_workers=len(hosts)) as executor:
+        host_status = []
+        futures = []
         
-        if hostname and username and password:
-            status = get_power_status(hostname, username, password, ipmitool_path)
-        else:
-            status = 'config_error'
+        for host in hosts:
+            ipmi_host = host.get('ipmi_host')
+            ipmi_username = host.get('ipmi_username')
+            ipmi_password = host.get('ipmi_password')
+            ssh_host = host.get('ssh_host')
+            ssh_username = host.get('ssh_username')
+            ssh_password = host.get('ssh_password')
+            name = host.get('name', ipmi_host or ssh_host)
             
-        host_status.append({
-            'name': name,
-            'hostname': hostname,
-            'status': status
-        })
+            # Get power status
+            if ipmi_host and ipmi_username and ipmi_password:
+                power_status = get_power_status(ipmi_host, ipmi_username, ipmi_password, ipmitool_path)
+            else:
+                power_status = 'config_error'
+            
+            # Submit SSH uptime task
+            if ssh_host and ssh_username and ssh_password:
+                uptime_future = executor.submit(get_uptime_sync, ssh_host, ssh_username, ssh_password, ssh_timeout)
+            else:
+                uptime_future = None
+            
+            futures.append((host, power_status, uptime_future))
+        
+        # Collect results
+        for host, power_status, uptime_future in futures:
+            ipmi_host = host.get('ipmi_host')
+            ssh_host = host.get('ssh_host')
+            name = host.get('name', ipmi_host or ssh_host)
+            
+            if uptime_future:
+                try:
+                    uptime = uptime_future.result(timeout=ssh_timeout + 1)
+                except Exception as e:
+                    uptime = f'Error: {str(e)}'
+            else:
+                uptime = 'No SSH config'
+            
+            host_status.append({
+                'name': name,
+                'hostname': ipmi_host or ssh_host,
+                'status': power_status,
+                'uptime': uptime
+            })
     
     return jsonify({'hosts': host_status})
 
@@ -237,7 +339,7 @@ def api_power_on(hostname):
     # Find the host in config
     target_host = None
     for host in hosts:
-        if host.get('hostname') == hostname:
+        if host.get('ipmi_host') == hostname:
             target_host = host
             break
     
@@ -245,14 +347,14 @@ def api_power_on(hostname):
         return jsonify({'success': False, 'message': 'Host not found in configuration'}), 404
     
     # Extract credentials
-    username = target_host.get('username')
-    password = target_host.get('password')
+    ipmi_username = target_host.get('ipmi_username')
+    ipmi_password = target_host.get('ipmi_password')
     
-    if not username or not password:
+    if not ipmi_username or not ipmi_password:
         return jsonify({'success': False, 'message': 'Missing credentials in configuration'}), 400
     
     # Attempt to power on
-    result = power_on_host(hostname, username, password, ipmitool_path)
+    result = power_on_host(hostname, ipmi_username, ipmi_password, ipmitool_path)
     
     if result['success']:
         return jsonify(result), 200

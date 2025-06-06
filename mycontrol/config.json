@@ -1,6 +1,7 @@
 {
   "port": 5010,
   "refresh_interval": 30,
+  "ssh_timeout": 10,
   "ipmitool_path": "ipmitool",
   "grafana_dashboard_urls": [
     {
@@ -19,9 +20,12 @@
   "hosts": [
     {
       "name": "Lab Server",
-      "hostname": "192.168.50.246",
-      "username": "admin",
-      "password": "samyeung"
+      "ipmi_host": "ipmi.yeungs.net",
+      "ipmi_username": "admin",
+      "ipmi_password": "samyeung",
+      "ssh_host": "lab.yeungs.net",
+      "ssh_username": "sam",
+      "ssh_password": "samyeung"
     }
   ]
 }

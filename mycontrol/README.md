@@ -5,10 +5,12 @@ A Flask web application for monitoring remote host power status via IPMI.
 ## Features
 
 - Display power status of multiple remote hosts
+- Display host uptime via SSH connections
 - Power on hosts remotely via IPMI when they are powered off
 - Query IPMI using lanplus protocol
+- Asynchronous SSH connections for fast uptime retrieval
 - Configuration via JSON file
-- Configurable auto-refresh interval
+- Configurable auto-refresh interval and SSH timeout
 - Clean web interface with status indicators
 - Automated startup script with virtual environment management
 - Comprehensive logging with log rotation
@@ -34,6 +36,7 @@ Update `config.json` with your host details:
 {
   "port": 5010,
   "refresh_interval": 30,
+  "ssh_timeout": 10,
   "ipmitool_path": "ipmitool",
   "grafana_dashboard_urls": [
     {
@@ -49,9 +52,12 @@ Update `config.json` with your host details:
   "hosts": [
     {
       "name": "Server Name",
-      "hostname": "192.168.1.100",
-      "username": "ipmi_user",
-      "password": "ipmi_password"
+      "ipmi_host": "192.168.1.100",
+      "ipmi_username": "ipmi_user",
+      "ipmi_password": "ipmi_password",
+      "ssh_host": "192.168.1.100",
+      "ssh_username": "user",
+      "ssh_password": "password"
     }
   ]
 }
@@ -61,12 +67,20 @@ Update `config.json` with your host details:
 
 - `port`: Web server listening port (default: 5010)
 - `refresh_interval`: Auto-refresh interval in seconds (default: 30)
+- `ssh_timeout`: SSH connection timeout in seconds (default: 10)
 - `ipmitool_path`: Path to ipmitool binary (default: "ipmitool")
 - `grafana_dashboard_urls`: Array of Grafana dashboard configurations (optional)
   - `name`: Display name for the dashboard (optional - if omitted, no header is shown)
   - `url`: URL to Grafana dashboard panel
   - `height`: Height of the iframe in pixels (default: 400)
 - `hosts`: Array of host configurations
+  - `name`: Display name for the host
+  - `ipmi_host`: IPMI hostname or IP address (optional)
+  - `ipmi_username`: IPMI username (optional)
+  - `ipmi_password`: IPMI password (optional)
+  - `ssh_host`: SSH hostname or IP address (optional)
+  - `ssh_username`: SSH username (optional)
+  - `ssh_password`: SSH password (optional)
 
 ## Prerequisites
 

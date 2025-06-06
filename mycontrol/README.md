@@ -5,6 +5,7 @@ A Flask web application for monitoring remote host power status via IPMI.
 ## Features
 
 - Display power status of multiple remote hosts
+- Power on hosts remotely via IPMI when they are powered off
 - Query IPMI using lanplus protocol
 - Configuration via JSON file
 - Auto-refresh every 30 seconds
@@ -96,6 +97,7 @@ Logs are stored in the `logs/` directory:
 
 - `GET /` - Web interface
 - `GET /api/status` - JSON API for host status
+- `POST /api/power-on/<hostname>` - Power on a specific host via IPMI
 
 ## Process Management
 

@@ -5,6 +5,8 @@ import subprocess
 import json
 import logging
 import os
+import signal
+import time
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
 from utils.ssh_utils import get_host_uptimes
@@ -274,6 +276,192 @@ def api_power_on(hostname):
         return jsonify(result), 200
     else:
         return jsonify(result), 500
+
+# Global dict to track ttyd processes
+ttyd_processes = {}
+
+@app.route('/api/ssh-terminal/<hostname>', methods=['POST'])
+def start_ssh_terminal(hostname):
+    """Start a ttyd SSH terminal for the specified host"""
+    config = load_config()
+    hosts = config.get('hosts', [])
+    ttyd_base_port = config.get('ttyd_base_port', 7681)
+    
+    # Find the host in config
+    target_host = None
+    for host in hosts:
+        if host.get('ipmi_host') == hostname or host.get('ssh_host') == hostname:
+            target_host = host
+            break
+    
+    if not target_host:
+        return jsonify({'success': False, 'message': 'Host not found in configuration'}), 404
+    
+    ssh_host = target_host.get('ssh_host')
+    if not ssh_host:
+        return jsonify({'success': False, 'message': 'No SSH host configured for this server'}), 400
+    
+    # Check if ttyd is available
+    try:
+        subprocess.run(['ttyd', '--version'], capture_output=True, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return jsonify({'success': False, 'message': 'ttyd not installed. Please install ttyd to use SSH terminals.'}), 500
+    
+    # Generate a unique port for this terminal session
+    terminal_port = ttyd_base_port + hash(hostname) % 1000
+    
+    # Kill any existing ttyd process for this host
+    if hostname in ttyd_processes:
+        try:
+            os.kill(ttyd_processes[hostname]['pid'], signal.SIGTERM)
+            time.sleep(0.5)  # Give it time to shutdown
+        except ProcessLookupError:
+            pass  # Process already dead
+    
+    try:
+        # Start ttyd with SSH to the target host
+        # ttyd will prompt user for SSH credentials
+        cmd = [
+            'ttyd',
+            '--port', str(terminal_port),
+            '--interface', '127.0.0.1',  # Only bind to localhost for security
+            '--once',  # Close after one client disconnects
+            '--writable',  # Allow keyboard input
+            'ssh', ssh_host
+        ]
+        
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # Store process info
+        ttyd_processes[hostname] = {
+            'pid': process.pid,
+            'port': terminal_port,
+            'host': ssh_host,
+            'started': time.time()
+        }
+        
+        # Give ttyd a moment to start up
+        time.sleep(1)
+        
+        # Check if process is still running
+        if process.poll() is not None:
+            # Process died, get error output
+            _, stderr = process.communicate()
+            return jsonify({
+                'success': False, 
+                'message': f'Failed to start terminal: {stderr.decode()}'
+            }), 500
+        
+        app.logger.info(f"Started SSH terminal for {hostname} on port {terminal_port}")
+        
+        return jsonify({
+            'success': True,
+            'terminal_url': f'http://localhost:{terminal_port}',
+            'message': 'SSH terminal started successfully'
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"Error starting SSH terminal for {hostname}: {e}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+@app.route('/api/ssh-terminals')
+def list_ssh_terminals():
+    """List active SSH terminals"""
+    active_terminals = []
+    current_time = time.time()
+    
+    # Clean up dead processes
+    for hostname in list(ttyd_processes.keys()):
+        try:
+            # Check if process is still alive
+            os.kill(ttyd_processes[hostname]['pid'], 0)
+            # Add to active list if it's been running for less than 1 hour
+            if current_time - ttyd_processes[hostname]['started'] < 3600:
+                active_terminals.append({
+                    'hostname': hostname,
+                    'port': ttyd_processes[hostname]['port'],
+                    'host': ttyd_processes[hostname]['host'],
+                    'url': f"http://localhost:{ttyd_processes[hostname]['port']}"
+                })
+        except ProcessLookupError:
+            # Process is dead, remove it
+            del ttyd_processes[hostname]
+    
+    return jsonify({'terminals': active_terminals})
+
+@app.route('/api/gpu-info/<hostname>')
+def get_gpu_info(hostname):
+    """Get GPU information via SSH by running nvidia-smi"""
+    config = load_config()
+    hosts = config.get('hosts', [])
+    ssh_timeout = config.get('ssh_timeout', 10)
+    
+    # Find the host in config
+    target_host = None
+    for host in hosts:
+        if host.get('ipmi_host') == hostname or host.get('ssh_host') == hostname:
+            target_host = host
+            break
+    
+    if not target_host:
+        return jsonify({'success': False, 'message': 'Host not found in configuration'}), 404
+    
+    ssh_host = target_host.get('ssh_host')
+    ssh_username = target_host.get('ssh_username')
+    ssh_password = target_host.get('ssh_password')
+    
+    if not ssh_host:
+        return jsonify({'success': False, 'message': 'No SSH host configured for this server'}), 400
+    
+    if not ssh_username:
+        return jsonify({'success': False, 'message': 'No SSH username configured for this server'}), 400
+    
+    try:
+        import asyncio
+        import asyncssh
+        
+        async def run_nvidia_smi():
+            try:
+                async with asyncssh.connect(
+                    ssh_host,
+                    username=ssh_username,
+                    password=ssh_password,
+                    known_hosts=None,
+                    client_keys=None
+                ) as conn:
+                    result = await asyncio.wait_for(
+                        conn.run('nvidia-smi', check=False),
+                        timeout=15
+                    )
+                    
+                    if result.exit_status == 0:
+                        return {'success': True, 'output': result.stdout}
+                    else:
+                        # Command failed, could be no nvidia-smi installed
+                        error_msg = result.stderr or 'nvidia-smi command failed'
+                        return {'success': False, 'message': f'Command failed: {error_msg}'}
+                        
+            except asyncio.TimeoutError:
+                return {'success': False, 'message': 'Command timed out'}
+            except asyncssh.Error as e:
+                return {'success': False, 'message': f'SSH connection failed: {str(e)}'}
+            except Exception as e:
+                return {'success': False, 'message': f'Unexpected error: {str(e)}'}
+        
+        # Run the async function
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result = loop.run_until_complete(run_nvidia_smi())
+            return jsonify(result)
+        finally:
+            loop.close()
+            
+    except ImportError:
+        return jsonify({'success': False, 'message': 'asyncssh module not available'}), 500
+    except Exception as e:
+        app.logger.error(f"Error getting GPU info for {hostname}: {e}")
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
     config = load_config()

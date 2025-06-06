@@ -7,6 +7,8 @@ A Flask web application for monitoring remote host power status via IPMI.
 - Display power status of multiple remote hosts
 - Display host uptime via SSH connections
 - Power on hosts remotely via IPMI when they are powered off
+- **Web-based SSH terminals** - Direct SSH access to servers through the browser
+- **GPU monitoring** - View nvidia-smi output via expandable sections
 - Query IPMI using lanplus protocol
 - Asynchronous SSH connections for fast uptime retrieval
 - Configuration via JSON file
@@ -60,6 +62,7 @@ Then edit `config.json` with your actual server details. See `config.json.exampl
 - `port`: Web server listening port (default: 5010)
 - `refresh_interval`: Auto-refresh interval in seconds (default: 30)
 - `ssh_timeout`: SSH connection timeout in seconds (default: 10)
+- `ttyd_base_port`: Base port for SSH terminals (default: 7681)
 - `ipmitool_path`: Path to ipmitool binary (default: "ipmitool")
 - `grafana_dashboard_urls`: Array of Grafana dashboard configurations (optional)
   - `name`: Display name for the dashboard (optional - if omitted, no header is shown)
@@ -86,6 +89,11 @@ mycontrol/
 ├── .gitignore          # Git ignore rules
 ├── templates/          # HTML templates
 │   └── index.html
+├── static/             # Static assets
+│   ├── css/           # CSS stylesheets
+│   │   └── style.css
+│   └── js/            # JavaScript files
+│       └── app.js
 ├── utils/              # Utility modules
 │   ├── ssh_utils.py    # SSH functionality
 │   └── grafana_utils.py # Grafana dashboard processing
@@ -97,6 +105,8 @@ mycontrol/
 
 ## Prerequisites
 
+### Required Dependencies
+
 Ensure `ipmitool` is installed on your system:
 ```bash
 # Ubuntu/Debian
@@ -107,6 +117,26 @@ sudo yum install ipmitool
 
 # macOS
 brew install ipmitool
+```
+
+### Optional Dependencies
+
+For SSH terminal functionality, install `ttyd`:
+```bash
+# Ubuntu/Debian
+sudo apt-get install ttyd
+
+# CentOS/RHEL/Fedora
+sudo dnf install ttyd
+
+# macOS
+brew install ttyd
+
+# From source (if not available in package manager)
+git clone https://github.com/tsl0922/ttyd.git
+cd ttyd && mkdir build && cd build
+cmake ..
+make && sudo make install
 ```
 
 ## Usage
@@ -129,6 +159,28 @@ python app.py
 
 Access the web interface at: http://localhost:5010 (or your configured port)
 
+### SSH Terminal Feature
+
+The application provides web-based SSH terminals through `ttyd`. Each host card includes an "SSH Terminal" button that opens a new browser tab with a terminal session to that server.
+
+**Features:**
+- Secure web-based SSH access requiring user authentication
+- Automatic terminal cleanup after client disconnects
+- Unique port allocation per host to prevent conflicts
+- Browser-based terminal with full SSH functionality
+
+**Usage:**
+1. Click the "SSH Terminal" button on any host card
+2. A new browser tab will open with the terminal session
+3. Enter your SSH credentials when prompted
+4. Terminal session will automatically close when you disconnect
+
+**Security Notes:**
+- Terminals are bound to localhost (127.0.0.1) for security
+- Each terminal requires manual SSH authentication
+- Sessions automatically terminate after client disconnect
+- No SSH credentials are stored or auto-filled
+
 ## Logging
 
 Logs are stored in the `logs/` directory:
@@ -140,6 +192,9 @@ Logs are stored in the `logs/` directory:
 - `GET /` - Web interface
 - `GET /api/status` - JSON API for host status
 - `POST /api/power-on/<hostname>` - Power on a specific host via IPMI
+- `POST /api/ssh-terminal/<hostname>` - Start SSH terminal for a host
+- `GET /api/ssh-terminals` - List active SSH terminals
+- `GET /api/gpu-info/<hostname>` - Get GPU information via nvidia-smi
 
 ## Process Management
 

@@ -2,6 +2,7 @@
   "port": 5010,
   "refresh_interval": 30,
   "ssh_timeout": 10,
+  "ttyd_base_port": 7681,
   "ipmitool_path": "ipmitool",
   "grafana_dashboard_urls": [
     {

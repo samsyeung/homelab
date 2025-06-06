@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-01-07
+
+### Added
+- **Web-based SSH terminals** - Direct SSH access to servers through the browser
+  - Browser-based SSH terminal sessions using ttyd
+  - SSH Terminal button on each host card
+  - Secure localhost-only terminal binding
+  - Automatic terminal cleanup after client disconnect
+  - Unique port allocation per host to prevent conflicts
+  - Manual SSH authentication required (no auto-login)
+- New API endpoints for SSH terminal management:
+  - `POST /api/ssh-terminal/<hostname>` - Start SSH terminal for a host
+  - `GET /api/ssh-terminals` - List active SSH terminals
+- `ttyd_base_port` configuration option for SSH terminal port management
+- **GPU Status Monitoring** - Expandable sections showing nvidia-smi output
+  - GPU Status button appears on powered-on hosts
+  - Fetches real-time GPU information via SSH
+  - Expandable/collapsible interface with loading states
+  - Formatted output in monospace font for readability
+  - Error handling for hosts without nvidia-smi
+- New API endpoint: `GET /api/gpu-info/<hostname>` - Get GPU information via nvidia-smi
+
 ## [0.1.0] - 2025-06-06
 
 ### Added

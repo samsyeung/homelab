@@ -201,6 +201,11 @@ def get_uptime(hostname):
     if not ssh_host or not ssh_username:
         return jsonify({'success': False, 'uptime': 'No SSH config'})
     
+    # Check if host is pingable first
+    ping_result = check_host_ping(ssh_host)
+    if not ping_result.get('success') or ping_result.get('status') != 'online':
+        return jsonify({'success': False, 'uptime': 'Host unreachable'})
+    
     # Get uptime using the existing SSH utility
     from libs.ssh_utils import get_uptime_sync
     uptime = get_uptime_sync(ssh_host, ssh_username, ssh_password, ssh_timeout)

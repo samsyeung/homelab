@@ -30,17 +30,69 @@ A Flask web application for monitoring remote host power status via IPMI.
 
 ### Application Interface
 
-![MyControl Application Screenshot](docs/images/app-screenshot.png)
+MyControl provides a comprehensive web-based interface for managing and monitoring your homelab infrastructure. Below are screenshots showcasing the key features:
 
-The application provides a clean, modern web interface featuring:
-- **Host Status Cards**: Display server name, power state, network connectivity, and system uptime with load averages
-- **Real-time Monitoring**: Auto-refresh functionality and non-blocking network checks keep information current
-- **Compact Status Indicators**: Streamlined UI with smaller badges and buttons for better space utilization
-- **Comprehensive Monitoring**: GPU monitoring (summary & topology), Docker container management, and nvtop terminals
-- **Container Management**: View, start, and stop Docker containers with real-time status updates
-- **SSH Terminal Access**: Web-based terminals for direct server access
-- **Integrated Dashboards**: Embedded Grafana charts for GPU utilization, temperature monitoring, and other system metrics
+#### Main Dashboard
+![MyControl Main Dashboard](docs/images/Screenshot-Frontpage.png)
+
+The main dashboard displays all your hosts with real-time status information including:
+- **Host Status Cards**: Power state, network connectivity, and system uptime with load averages
+- **Real-time Monitoring**: Auto-refresh functionality and non-blocking network checks
+- **Compact Status Indicators**: Color-coded status badges and ping indicators
+- **Terminal Access**: SSH and nvtop buttons for direct host access
+- **Monitoring Tools**: GPU Summary, GPU Topology, and Docker management buttons
+
+#### GPU Summary Monitoring
+![GPU Summary View](docs/images/Screenshot-summary.png)
+
+View detailed nvidia-smi output in a clean, expandable format showing:
+- GPU utilization and memory usage
+- Temperature and power consumption
+- Running processes and their resource usage
+- Real-time GPU performance metrics
+
+#### GPU Topology Analysis
+![GPU Topology View](docs/images/Screenshot-topology.png)
+
+Multi-GPU systems can display interconnect topology information:
+- GPU-to-GPU communication paths
+- PCIe topology and bandwidth
+- NVLink connections (when available)
+- System architecture overview
+
+#### Docker Container Management
+![Docker Container Management](docs/images/Screenshot-docker.png)
+
+Complete Docker container monitoring and control capabilities:
+- **Container Table**: Formatted view of all containers with status indicators
+- **Start/Stop Controls**: One-click container management with real-time feedback
+- **Status Indicators**: Color-coded status badges (running=green, exited=red, etc.)
+- **Container Details**: ID, name, image, ports, and creation information
+
+#### Web-based SSH Terminals
+![SSH Terminal Access](docs/images/Screenshot-ssh.png)
+
+Direct SSH access through the browser with:
+- **Full Terminal Functionality**: Complete SSH session in browser
+- **Multiple Sessions**: Independent terminals for each host
+- **Secure Access**: Localhost-only binding with manual authentication
+- **Session Management**: Automatic cleanup after disconnect
+
+#### Real-time nvtop Monitoring
+![nvtop Real-time Monitoring](docs/images/Screenshot-nvtop.png)
+
+Live GPU monitoring through dedicated terminal windows:
+- **Real-time GPU Stats**: Live updating GPU utilization and memory
+- **Process Monitoring**: Real-time view of GPU processes and their resource usage
+- **Multi-GPU Support**: Simultaneous monitoring of multiple GPUs
+- **Terminal Interface**: Full nvtop functionality in browser window
+
+### Key Features
 - **Responsive Design**: Clean 2-column layout that adapts to different screen sizes
+- **Real-time Updates**: All monitoring data updates automatically
+- **Integrated Dashboards**: Embedded Grafana charts for additional system metrics
+- **Comprehensive Control**: Power management, container control, and terminal access
+- **Multi-host Support**: Manage multiple servers from a single interface
 
 ## Setup
 

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2025-01-07
+
+### Added
+- **Enhanced documentation** - Comprehensive visual showcase of application features
+  - Added 6 new screenshots demonstrating all major functionality
+  - Main dashboard overview showing host status and monitoring tools
+  - GPU Summary monitoring with nvidia-smi output display
+  - GPU Topology analysis for multi-GPU system interconnects
+  - Docker container management interface with start/stop controls
+  - Web-based SSH terminal access demonstration
+  - Real-time nvtop monitoring interface showcase
+- **Improved README structure** - Better organization and visual presentation
+  - Detailed feature descriptions with accompanying screenshots
+  - Step-by-step visual guide through application capabilities
+  - Enhanced user onboarding experience with clear feature explanations
+
+### Enhanced
+- **Documentation quality** - More comprehensive and user-friendly documentation
+  - Visual documentation of all monitoring and management features
+  - Clear explanations of GPU monitoring, Docker management, and terminal access
+  - Better presentation of multi-host management capabilities
+
 ## [0.7.0] - 2025-01-07
 
 ### Added

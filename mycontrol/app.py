@@ -334,7 +334,11 @@ def start_nvtop_terminal(hostname):
     if not ssh_host or not ssh_username:
         return jsonify({'success': False, 'message': 'SSH configuration missing for this server'}), 400
     
-    result = get_terminal_manager().start_nvtop_terminal(hostname, ssh_host, ssh_username, ssh_password)
+    # Get nvtop and sshpass paths from config
+    nvtop_path = config.get('nvtop_path', 'nvtop')
+    sshpass_path = config.get('sshpass_path', 'sshpass')
+    
+    result = get_terminal_manager().start_nvtop_terminal(hostname, ssh_host, ssh_username, ssh_password, nvtop_path, sshpass_path)
     
     if result['success']:
         return jsonify(result), 200

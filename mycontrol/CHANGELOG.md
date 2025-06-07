@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-01-07
+
+### Added
+- **Configurable tool paths** - Support for custom binary paths in configuration
+  - `sshpass_path` configuration option for custom sshpass binary location
+  - Enhanced flexibility for different system configurations and installations
+- **Improved ping-based connectivity checks** - Smarter uptime monitoring
+  - Uptime requests now check host connectivity via ping before attempting SSH
+  - Prevents unnecessary SSH connection timeouts to unreachable hosts
+  - Faster response times and better user experience
+
+### Fixed
+- **nvtop terminal functionality** - Resolved critical terminal execution issues
+  - Fixed "execvp failed" errors in nvtop popup terminals
+  - Added pseudo-terminal allocation (`-t` flag) for proper nvtop execution
+  - Set proper terminal environment (`TERM=xterm-256color`) for display compatibility
+  - Removed unsupported ttyd options (`--title-format`, `--readonly`) causing failures
+  - nvtop terminals now work reliably across different system configurations
+- **Git repository cleanup** - Removed unnecessary tracked files
+  - Removed log files and PID files from version control
+  - Improved .gitignore patterns for cleaner repository management
+
+### Technical Improvements
+- Enhanced error handling and debugging capabilities for terminal management
+- Improved SSH connection reliability with proper terminal allocation
+- Better integration between configuration system and library modules
+- Streamlined terminal command construction and execution
+
 ## [0.5.0-alpha] - 2025-01-07
 
 ### Added

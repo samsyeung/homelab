@@ -8,7 +8,8 @@ import tempfile
 import stat
 import logging
 
-logger = logging.getLogger(__name__)
+# Get the app logger to ensure proper logging configuration
+logger = logging.getLogger('app')
 
 class TerminalManager:
     """Manages ttyd terminal processes"""
@@ -22,6 +23,14 @@ class TerminalManager:
         """Check if ttyd is available"""
         try:
             subprocess.run(['ttyd', '--version'], capture_output=True, check=True)
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
+    
+    def _check_sshpass_available(self):
+        """Check if sshpass is available"""
+        try:
+            subprocess.run(['sshpass', '-V'], capture_output=True, check=True)
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
@@ -95,7 +104,7 @@ class TerminalManager:
             logger.error(f"Error starting SSH terminal for {hostname}: {e}")
             return {'success': False, 'message': f'Error: {str(e)}'}
     
-    def start_nvtop_terminal(self, hostname, ssh_host, ssh_username, ssh_password=None):
+    def start_nvtop_terminal(self, hostname, ssh_host, ssh_username, ssh_password=None, nvtop_path="nvtop", sshpass_path="sshpass"):
         """Start a ttyd nvtop terminal"""
         if not self._check_ttyd_available():
             return {'success': False, 'message': 'ttyd not installed. Please install ttyd to use nvtop terminal.'}
@@ -107,13 +116,16 @@ class TerminalManager:
         self._kill_existing_process(hostname, self.nvtop_processes)
         
         try:
-            # Create SSH command with nvtop that uses config credentials
             if ssh_password:
-                # Create a temporary script that handles SSH login with password
+                # Check if sshpass is available for password authentication
+                if not self._check_sshpass_available():
+                    return {'success': False, 'message': 'sshpass not installed. Please install sshpass to use password-based SSH terminals.'}
+                
+                # Create a temporary script for password-based SSH similar to working SSH terminal
                 with tempfile.NamedTemporaryFile(mode='w', suffix='.sh', delete=False) as f:
                     f.write(f'''#!/bin/bash
 export SSHPASS='{ssh_password}'
-sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {ssh_username}@{ssh_host} nvtop
+{sshpass_path} -e ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {ssh_username}@{ssh_host} "export TERM=xterm-256color; {nvtop_path}"
 ''')
                     script_path = f.name
                 
@@ -121,33 +133,30 @@ sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Lo
                 os.chmod(script_path, stat.S_IRWXU)
                 
                 # Start ttyd with the script
-                ttyd_cmd = [
+                cmd = [
                     'ttyd',
                     '--port', str(nvtop_port),
                     '--interface', '127.0.0.1',  # Only bind to localhost for security
                     '--once',  # Close after one client disconnects
-                    '--readonly',  # Make it read-only
-                    '--title-format', f'nvtop - {hostname}',
-                    'bash', script_path
+                    '/bin/bash', script_path
                 ]
             else:
-                # Use key-based authentication
-                ttyd_cmd = [
+                # Use key-based authentication, similar to working SSH terminal
+                cmd = [
                     'ttyd',
                     '--port', str(nvtop_port),
                     '--interface', '127.0.0.1',  # Only bind to localhost for security
                     '--once',  # Close after one client disconnects
-                    '--readonly',  # Make it read-only
-                    '--title-format', f'nvtop - {hostname}',
                     'ssh',
+                    '-t',
                     '-o', 'StrictHostKeyChecking=no',
                     '-o', 'UserKnownHostsFile=/dev/null',
                     '-o', 'LogLevel=ERROR',
                     f'{ssh_username}@{ssh_host}',
-                    'nvtop'
+                    f'export TERM=xterm-256color; {nvtop_path}'
                 ]
             
-            process = subprocess.Popen(ttyd_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             
             # Store process info
             self.nvtop_processes[hostname] = {
@@ -163,7 +172,8 @@ sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o Lo
             # Check if process is still running
             if process.poll() is not None:
                 # Process died, get error output
-                _, stderr = process.communicate()
+                stdout, stderr = process.communicate()
+                logger.error(f"nvtop terminal process died immediately. stdout: {stdout.decode()}, stderr: {stderr.decode()}")
                 return {
                     'success': False, 
                     'message': f'Failed to start nvtop terminal: {stderr.decode()}'

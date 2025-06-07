@@ -4,6 +4,8 @@
   "ssh_timeout": 10,
   "ttyd_base_port": 7681,
   "ipmitool_path": "ipmitool",
+  "nvtop_path": "nvtop",
+  "sshpass_path": "sshpass",
   "grafana_dashboard_urls": [
     {
       "name": "GPU Usage",

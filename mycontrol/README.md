@@ -9,8 +9,9 @@ A Flask web application for monitoring remote host power status via IPMI.
 - **Power management** - Power on hosts remotely via IPMI when they are powered off
 - **Web-based SSH terminals** - Direct SSH access to servers through the browser
 - **GPU monitoring** - View nvidia-smi output via expandable sections
-- **Real-time nvtop monitoring** - Dedicated terminal windows for live GPU monitoring
+- **Real-time nvtop monitoring** - Dedicated terminal windows for live GPU monitoring with reliable execution
 - **Compact, clean UI** - Streamlined interface with smaller status indicators and improved layout
+- **Smart connectivity monitoring** - Ping-based checks before SSH attempts for better performance
 - Query IPMI using lanplus protocol
 - Asynchronous SSH connections for fast uptime retrieval
 - Non-blocking network checks for better performance
@@ -70,6 +71,8 @@ Then edit `config.json` with your actual server details. See `config.json.exampl
 - `ssh_timeout`: SSH connection timeout in seconds (default: 10)
 - `ttyd_base_port`: Base port for SSH terminals (default: 7681)
 - `ipmitool_path`: Path to ipmitool binary (default: "ipmitool")
+- `nvtop_path`: Path to nvtop binary on remote hosts (default: "nvtop")
+- `sshpass_path`: Path to sshpass binary for password-based SSH (default: "sshpass")
 - `grafana_dashboard_urls`: Array of Grafana dashboard configurations (optional)
   - `name`: Display name for the dashboard (optional - if omitted, no header is shown)
   - `url`: URL to Grafana dashboard panel
@@ -133,22 +136,34 @@ brew install ipmitool
 
 ### Optional Dependencies
 
-For SSH terminal functionality, install `ttyd`:
+For SSH terminal and nvtop functionality, install `ttyd` and `sshpass`:
 ```bash
 # Ubuntu/Debian
-sudo apt-get install ttyd
+sudo apt-get install ttyd sshpass
 
 # CentOS/RHEL/Fedora
-sudo dnf install ttyd
+sudo dnf install ttyd sshpass
 
 # macOS
-brew install ttyd
+brew install ttyd sshpass
 
 # From source (if not available in package manager)
 git clone https://github.com/tsl0922/ttyd.git
 cd ttyd && mkdir build && cd build
 cmake ..
 make && sudo make install
+```
+
+For password-based SSH authentication, install `sshpass`:
+```bash
+# Ubuntu/Debian
+sudo apt-get install sshpass
+
+# CentOS/RHEL/Fedora
+sudo dnf install sshpass
+
+# macOS (already included above)
+brew install sshpass
 ```
 
 ## Usage

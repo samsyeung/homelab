@@ -2,6 +2,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('timestamp').textContent = new Date().toLocaleString();
     initializeRefreshTimer();
+    loadUptimes();
+    loadPingStatus();
 });
 
 // Auto-refresh management
@@ -279,89 +281,221 @@ function toggleGpuInfo(hostname, button) {
     }
 }
 
-// Global object to track nvtop streams
-let nvtopStreams = {};
-
-function toggleNvtopInfo(hostname, button) {
-    const nvtopSection = document.getElementById('nvtop-' + hostname);
-    const nvtopOutput = nvtopSection.querySelector('.nvtop-output');
-    const nvtopLoading = nvtopSection.querySelector('.nvtop-loading');
-    const nvtopControls = nvtopSection.querySelector('.nvtop-controls');
+function openNvtopTerminal(hostname, button) {
+    // Disable button and show loading state
+    button.disabled = true;
+    button.textContent = 'Starting nvtop...';
     
-    if (nvtopSection.style.display === 'none') {
-        // Show nvtop section and start streaming
-        nvtopSection.style.display = 'block';
-        button.textContent = 'Hide';
-        button.classList.add('expanded');
-        
-        // Show loading state
-        nvtopLoading.style.display = 'block';
-        nvtopOutput.style.display = 'none';
-        nvtopControls.style.display = 'none';
-        
-        // Start nvtop stream
-        startNvtopStream(hostname);
-    } else {
-        // Hide nvtop section and stop streaming
-        nvtopSection.style.display = 'none';
-        button.textContent = 'nvtop';
-        button.classList.remove('expanded');
-        
-        // Stop the stream
-        stopNvtop(hostname);
+    // Open window immediately to avoid popup blockers (especially Safari)
+    const nvtopWindow = window.open('about:blank', '_blank');
+    
+    // Show loading message in the new window
+    if (nvtopWindow) {
+        nvtopWindow.document.write(`
+            <html>
+                <head><title>Starting nvtop...</title></head>
+                <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                    <h2>Starting nvtop Terminal</h2>
+                    <p>Please wait while we establish the connection...</p>
+                    <div style="margin: 20px;">⏳</div>
+                </body>
+            </html>
+        `);
     }
-}
-
-function startNvtopStream(hostname) {
-    const nvtopOutput = document.querySelector(`#nvtop-${hostname} .nvtop-output`);
-    const nvtopLoading = document.querySelector(`#nvtop-${hostname} .nvtop-loading`);
-    const nvtopControls = document.querySelector(`#nvtop-${hostname} .nvtop-controls`);
     
-    // Initialize EventSource for streaming
-    const eventSource = new EventSource(`/api/nvtop-stream/${encodeURIComponent(hostname)}`);
-    nvtopStreams[hostname] = eventSource;
-    
-    eventSource.onopen = function() {
-        nvtopLoading.style.display = 'none';
-        nvtopOutput.style.display = 'block';
-        nvtopControls.style.display = 'block';
-        nvtopOutput.textContent = '';
-    };
-    
-    eventSource.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        
-        if (data.type === 'output') {
-            nvtopOutput.textContent = data.content;
-            // Auto-scroll to bottom
-            nvtopOutput.scrollTop = nvtopOutput.scrollHeight;
-        } else if (data.type === 'error') {
-            nvtopOutput.textContent = 'Error: ' + data.message;
-            nvtopOutput.classList.add('nvtop-error');
-            eventSource.close();
-            delete nvtopStreams[hostname];
+    fetch('/api/nvtop-terminal/' + encodeURIComponent(hostname), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
         }
-    };
-    
-    eventSource.onerror = function() {
-        nvtopLoading.style.display = 'none';
-        nvtopOutput.style.display = 'block';
-        nvtopOutput.textContent = 'Connection error. Stream stopped.';
-        nvtopOutput.classList.add('nvtop-error');
-        eventSource.close();
-        delete nvtopStreams[hostname];
-    };
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            button.textContent = 'nvtop Started';
+            button.style.backgroundColor = '#28a745';
+            
+            // Create a wrapper page with close button and nvtop iframe
+            if (nvtopWindow && !nvtopWindow.closed) {
+                const wrapperHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>nvtop - ${hostname}</title>
+                        <style>
+                            body { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; }
+                            .terminal-header { 
+                                background: #343a40; 
+                                color: white; 
+                                padding: 8px 15px; 
+                                display: flex; 
+                                justify-content: space-between; 
+                                align-items: center;
+                                border-bottom: 1px solid #495057;
+                            }
+                            .terminal-title { font-size: 14px; font-weight: 500; }
+                            .close-btn { 
+                                background: #dc3545; 
+                                color: white; 
+                                border: none; 
+                                padding: 6px 12px; 
+                                border-radius: 4px; 
+                                cursor: pointer; 
+                                font-size: 12px;
+                                font-weight: 500;
+                            }
+                            .close-btn:hover { background: #c82333; }
+                            .terminal-frame { 
+                                width: 100%; 
+                                height: calc(100vh - 45px); 
+                                border: none; 
+                                display: block;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="terminal-header">
+                            <div class="terminal-title">nvtop - ${hostname} (Read-Only)</div>
+                            <button class="close-btn" onclick="window.close()">✕ Close</button>
+                        </div>
+                        <iframe class="terminal-frame" src="${data.terminal_url}"></iframe>
+                    </body>
+                    </html>
+                `;
+                
+                nvtopWindow.document.open();
+                nvtopWindow.document.write(wrapperHtml);
+                nvtopWindow.document.close();
+            } else {
+                // Fallback: try to open in current window if popup was blocked
+                window.open(data.terminal_url, '_blank');
+            }
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                button.disabled = false;
+                button.textContent = 'nvtop';
+                button.style.backgroundColor = '#17a2b8';
+            }, 3000);
+        } else {
+            button.textContent = 'Failed';
+            button.style.backgroundColor = '#dc3545';
+            
+            // Close the loading window and show error
+            if (nvtopWindow && !nvtopWindow.closed) {
+                nvtopWindow.close();
+            }
+            alert('Failed to start nvtop terminal: ' + data.message);
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                button.disabled = false;
+                button.textContent = 'nvtop';
+                button.style.backgroundColor = '#17a2b8';
+            }, 3000);
+            console.error('nvtop terminal failed:', data.message);
+        }
+    })
+    .catch(error => {
+        button.textContent = 'Error';
+        button.style.backgroundColor = '#dc3545';
+        
+        // Close the loading window and show error
+        if (nvtopWindow && !nvtopWindow.closed) {
+            nvtopWindow.close();
+        }
+        alert('Error starting nvtop terminal: ' + error.message);
+        
+        // Reset button after 3 seconds
+        setTimeout(() => {
+            button.disabled = false;
+            button.textContent = 'nvtop';
+            button.style.backgroundColor = '#17a2b8';
+        }, 3000);
+        console.error('Error:', error);
+    });
 }
 
-function stopNvtop(hostname) {
-    if (nvtopStreams[hostname]) {
-        nvtopStreams[hostname].close();
-        delete nvtopStreams[hostname];
+function loadUptimes() {
+    // Find all uptime elements and load them asynchronously
+    const uptimeElements = document.querySelectorAll('.uptime');
+    
+    // Create array of promises for parallel execution
+    const uptimePromises = Array.from(uptimeElements).map(uptimeDiv => {
+        const hostCard = uptimeDiv.closest('.host-card');
+        const hostname = hostCard.querySelector('.host-hostname').textContent.trim();
         
-        // Send stop signal to backend
-        fetch(`/api/nvtop-stop/${encodeURIComponent(hostname)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        }).catch(error => console.error('Error stopping nvtop:', error));
-    }
+        // Skip if already loaded or if showing an error
+        const currentText = uptimeDiv.textContent;
+        if (!currentText.includes('Loading...')) {
+            return Promise.resolve();
+        }
+        
+        // Fetch uptime for this host
+        return fetch(`/api/uptime/${encodeURIComponent(hostname)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    uptimeDiv.innerHTML = `<strong>Uptime:</strong> ${data.uptime}`;
+                } else {
+                    uptimeDiv.innerHTML = `<strong>Uptime:</strong> ${data.uptime}`;
+                }
+            })
+            .catch(error => {
+                console.error(`Error fetching uptime for ${hostname}:`, error);
+                uptimeDiv.innerHTML = `<strong>Uptime:</strong> Error loading`;
+            });
+    });
+    
+    // Wait for all uptime requests to complete
+    Promise.allSettled(uptimePromises).then(() => {
+        console.log('All uptime information loaded');
+    });
+}
+
+function loadPingStatus() {
+    // Find all ping indicator elements and check connectivity
+    const pingElements = document.querySelectorAll('.ping-indicator');
+    
+    // Create array of promises for parallel execution
+    const pingPromises = Array.from(pingElements).map(pingDiv => {
+        const hostCard = pingDiv.closest('.host-card');
+        const hostname = hostCard.querySelector('.host-hostname').textContent.trim();
+        const pingStatus = pingDiv.querySelector('.ping-status');
+        
+        // Fetch ping status for this host
+        return fetch(`/api/ping/${encodeURIComponent(hostname)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    pingStatus.className = `ping-status ${data.status}`;
+                    switch(data.status) {
+                        case 'online':
+                            pingStatus.textContent = '● ONLINE';
+                            break;
+                        case 'offline':
+                            pingStatus.textContent = '○ OFFLINE';
+                            break;
+                        case 'error':
+                            pingStatus.textContent = '! ERROR';
+                            break;
+                        default:
+                            pingStatus.textContent = '? UNKNOWN';
+                    }
+                } else {
+                    pingStatus.className = 'ping-status error';
+                    pingStatus.textContent = '! ERROR';
+                }
+            })
+            .catch(error => {
+                console.error(`Error checking ping for ${hostname}:`, error);
+                pingStatus.className = 'ping-status error';
+                pingStatus.textContent = '! ERROR';
+            });
+    });
+    
+    // Wait for all ping requests to complete
+    Promise.allSettled(pingPromises).then(() => {
+        console.log('All ping status information loaded');
+    });
 }

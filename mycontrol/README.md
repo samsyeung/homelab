@@ -4,17 +4,19 @@ A Flask web application for monitoring remote host power status via IPMI.
 
 ## Features
 
-- Display power status of multiple remote hosts
-- Display host uptime via SSH connections
-- Power on hosts remotely via IPMI when they are powered off
+- **Host monitoring** - Display power status, uptime, and network connectivity of multiple remote hosts
+- **Network connectivity monitoring** - Real-time ping status indicators showing online/offline/error states
+- **Power management** - Power on hosts remotely via IPMI when they are powered off
 - **Web-based SSH terminals** - Direct SSH access to servers through the browser
 - **GPU monitoring** - View nvidia-smi output via expandable sections
-- **Real-time nvtop streaming** - Live GPU monitoring with continuous updates
+- **Real-time nvtop monitoring** - Dedicated terminal windows for live GPU monitoring
+- **Compact, clean UI** - Streamlined interface with smaller status indicators and improved layout
 - Query IPMI using lanplus protocol
 - Asynchronous SSH connections for fast uptime retrieval
+- Non-blocking network checks for better performance
 - Configuration via JSON file
 - Configurable auto-refresh interval and SSH timeout
-- Clean web interface with status indicators
+- Clean web interface with color-coded status indicators
 - Automated startup script with virtual environment management
 - Comprehensive logging with log rotation
 - Background process management
@@ -24,8 +26,11 @@ A Flask web application for monitoring remote host power status via IPMI.
 ![MyControl Application Screenshot](docs/images/app-screenshot.png)
 
 The application provides a clean, modern web interface featuring:
-- **Host Status Cards**: Display server name, power state, and system uptime with load averages
-- **Real-time Monitoring**: Auto-refresh functionality keeps information current
+- **Host Status Cards**: Display server name, power state, network connectivity, and system uptime with load averages
+- **Real-time Monitoring**: Auto-refresh functionality and non-blocking network checks keep information current
+- **Compact Status Indicators**: Streamlined UI with smaller badges and buttons for better space utilization
+- **GPU Monitoring**: nvidia-smi output and dedicated nvtop terminals for real-time GPU monitoring
+- **SSH Terminal Access**: Web-based terminals for direct server access
 - **Integrated Dashboards**: Embedded Grafana charts for GPU utilization, temperature monitoring, and other system metrics
 - **Responsive Design**: Clean 2-column layout that adapts to different screen sizes
 
@@ -95,9 +100,15 @@ mycontrol/
 │   │   └── style.css
 │   └── js/            # JavaScript files
 │       └── app.js
-├── utils/              # Utility modules
+├── libs/               # Library modules
+│   ├── __init__.py     # Package initialization
 │   ├── ssh_utils.py    # SSH functionality
-│   └── grafana_utils.py # Grafana dashboard processing
+│   ├── grafana_utils.py # Grafana dashboard processing
+│   ├── power_management.py # IPMI power control
+│   ├── network_utils.py # Network connectivity checks
+│   ├── gpu_management.py # GPU monitoring
+│   ├── terminal_management.py # SSH/nvtop terminal management
+│   └── config_utils.py # Configuration utilities
 ├── docs/               # Documentation and assets
 │   └── images/         # Screenshots and images
 ├── logs/               # Application logs (auto-created)
@@ -192,12 +203,15 @@ Logs are stored in the `logs/` directory:
 
 - `GET /` - Web interface
 - `GET /api/status` - JSON API for host status
+- `GET /api/uptime/<hostname>` - Get uptime for a specific host via SSH
 - `POST /api/power-on/<hostname>` - Power on a specific host via IPMI
 - `POST /api/ssh-terminal/<hostname>` - Start SSH terminal for a host
 - `GET /api/ssh-terminals` - List active SSH terminals
 - `GET /api/gpu-info/<hostname>` - Get GPU information via nvidia-smi
-- `GET /api/nvtop-stream/<hostname>` - Stream real-time nvtop output via SSE
-- `POST /api/nvtop-stop/<hostname>` - Stop nvtop streaming for a host
+- `GET /api/ping/<hostname>` - Check network connectivity via ping
+- `POST /api/nvtop-terminal/<hostname>` - Start nvtop terminal for a host
+- `GET /api/nvtop-terminals` - List active nvtop terminals
+- `POST /api/nvtop-stop/<hostname>` - Stop nvtop terminal for a host
 
 ## Process Management
 

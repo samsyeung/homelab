@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0-alpha] - 2025-01-07
+
+### Added
+- **Network connectivity monitoring** - Real-time ping status indicators
+  - Ping status indicator next to power status showing online/offline/error states
+  - Non-blocking ping checks after page load for better performance
+  - Visual indicators with colored badges (green=online, red=offline, yellow=error)
+- **Compact UI improvements** - Streamlined interface design
+  - Smaller power status badges and buttons for cleaner layout
+  - Reduced padding and font sizes for better space utilization
+  - More compact status indicators while maintaining readability
+
+### Changed
+- **nvtop implementation** - Switched to popup terminal approach
+  - nvtop now opens in popup window using SSH terminal (like SSH feature)
+  - Changed from page-embedded streaming to dedicated terminal window
+  - Button renamed from "GPU Stream" to "nvtop" for clarity
+  - Read-only SSH terminal session specifically for nvtop monitoring
+  - Uses configured SSH credentials instead of requiring sshpass
+- **Major code refactoring** - Improved maintainability and organization
+  - Renamed `utils/` directory to `libs/` for better naming convention
+  - Split large `app.py` into focused library modules:
+    - `libs/power_management.py` - IPMI power control functions
+    - `libs/network_utils.py` - Ping and network connectivity
+    - `libs/gpu_management.py` - GPU information retrieval
+    - `libs/terminal_management.py` - SSH and nvtop terminal management
+    - `libs/config_utils.py` - Configuration loading and utilities
+  - Reduced main application file by ~300 lines
+  - Better separation of concerns and reusable components
+
+### Fixed
+- nvtop streaming connection errors with proper SSH credential handling
+- DOM element selection issues with hostnames containing special characters
+- Terminal management now properly uses configured SSH credentials
+
+### Technical Improvements
+- Class-based terminal management for better process lifecycle control
+- Centralized configuration loading and host lookup utilities
+- Improved error handling and resource cleanup
+- More maintainable codebase with clear module boundaries
+
 ## [0.3.0] - 2025-01-07
 
 ### Added

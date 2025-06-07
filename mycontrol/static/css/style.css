@@ -129,12 +129,14 @@ h1 {
 }
 
 .status {
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 500;
     text-align: center;
     text-transform: uppercase;
-    font-size: 14px;
+    font-size: 11px;
+    display: inline-block;
+    min-width: 80px;
 }
 
 .status.on {
@@ -159,6 +161,46 @@ h1 {
     background-color: #e2e3e5;
     color: #383d41;
     border: 1px solid #d6d8db;
+}
+
+.status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.ping-indicator {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    min-width: 60px;
+    text-align: center;
+}
+
+.ping-status.loading {
+    color: #666;
+}
+
+.ping-status.online {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.ping-status.offline {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.ping-status.error {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
 }
 
 .refresh-container {
@@ -215,14 +257,15 @@ h1 {
 }
 
 .power-on-btn {
-    padding: 8px 16px;
+    padding: 6px 12px;
     background-color: #28a745;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 14px;
-    width: 100%;
+    font-size: 12px;
+    min-width: 80px;
+    width: auto;
 }
 
 .power-on-btn:hover {

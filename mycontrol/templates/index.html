@@ -41,20 +41,25 @@
                                 SSH
                             </button>
                         </div>
-                        <div class="status {{ host.status }}">
-                            {% if host.status == 'on' %}
-                                ● Powered On
-                            {% elif host.status == 'off' %}
-                                ○ Powered Off
-                            {% elif host.status == 'error' %}
-                                ! Error
-                            {% elif host.status == 'timeout' %}
-                                ⏱ Timeout
-                            {% elif host.status == 'config_error' %}
-                                ⚠ Config Error
-                            {% else %}
-                                ? Unknown
-                            {% endif %}
+                        <div class="status-row">
+                            <div class="status {{ host.status }}">
+                                {% if host.status == 'on' %}
+                                    ● ON
+                                {% elif host.status == 'off' %}
+                                    ○ OFF
+                                {% elif host.status == 'error' %}
+                                    ! ERROR
+                                {% elif host.status == 'timeout' %}
+                                    ⏱ TIMEOUT
+                                {% elif host.status == 'config_error' %}
+                                    ⚠ CONFIG
+                                {% else %}
+                                    ? UNKNOWN
+                                {% endif %}
+                            </div>
+                            <div class="ping-indicator" id="ping-{{ host.hostname }}" title="Network connectivity status">
+                                <span class="ping-status loading">⏳</span>
+                            </div>
                         </div>
                         <div class="uptime">
                             <strong>Uptime:</strong> {{ host.uptime }}
@@ -73,7 +78,7 @@
                             <button class="gpu-btn-small" onclick="toggleGpuInfo('{{ host.hostname }}', this)" title="Show nvidia-smi output">
                                 nvidia-smi
                             </button>
-                            <button class="nvtop-btn-small" onclick="toggleNvtopInfo('{{ host.hostname }}', this)" title="Show nvtop streaming output">
+                            <button class="nvtop-btn-small" onclick="openNvtopTerminal('{{ host.hostname }}', this)" title="Open nvtop terminal">
                                 nvtop
                             </button>
                         </div>
@@ -86,15 +91,6 @@
                             </div>
                         </div>
                         
-                        <div class="nvtop-section" id="nvtop-{{ host.hostname }}" style="display: none;">
-                            <div class="nvtop-content">
-                                <div class="nvtop-loading">Starting nvtop stream...</div>
-                                <pre class="nvtop-output" style="display: none;"></pre>
-                                <div class="nvtop-controls" style="display: none;">
-                                    <button class="stop-nvtop-btn" onclick="stopNvtop('{{ host.hostname }}')">Stop Stream</button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     {% endfor %}
                 </div>

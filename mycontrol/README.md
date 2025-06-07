@@ -8,7 +8,13 @@ A Flask web application for monitoring remote host power status via IPMI.
 - **Network connectivity monitoring** - Real-time ping status indicators showing online/offline/error states
 - **Power management** - Power on hosts remotely via IPMI when they are powered off
 - **Web-based SSH terminals** - Direct SSH access to servers through the browser
-- **GPU monitoring** - View nvidia-smi output via expandable sections
+- **GPU monitoring** - Comprehensive GPU monitoring with multiple views
+  - GPU Summary: nvidia-smi output via expandable sections  
+  - GPU Topology: nvidia-smi topo -m for multi-GPU interconnect information
+- **Docker container management** - Complete Docker monitoring and control
+  - View all containers in formatted table with status indicators
+  - Start/stop individual containers with one-click actions
+  - Real-time container status updates and port information
 - **Real-time nvtop monitoring** - Dedicated terminal windows for live GPU monitoring with reliable execution
 - **Compact, clean UI** - Streamlined interface with smaller status indicators and improved layout
 - **Smart connectivity monitoring** - Ping-based checks before SSH attempts for better performance
@@ -30,7 +36,8 @@ The application provides a clean, modern web interface featuring:
 - **Host Status Cards**: Display server name, power state, network connectivity, and system uptime with load averages
 - **Real-time Monitoring**: Auto-refresh functionality and non-blocking network checks keep information current
 - **Compact Status Indicators**: Streamlined UI with smaller badges and buttons for better space utilization
-- **GPU Monitoring**: nvidia-smi output and dedicated nvtop terminals for real-time GPU monitoring
+- **Comprehensive Monitoring**: GPU monitoring (summary & topology), Docker container management, and nvtop terminals
+- **Container Management**: View, start, and stop Docker containers with real-time status updates
 - **SSH Terminal Access**: Web-based terminals for direct server access
 - **Integrated Dashboards**: Embedded Grafana charts for GPU utilization, temperature monitoring, and other system metrics
 - **Responsive Design**: Clean 2-column layout that adapts to different screen sizes
@@ -223,6 +230,9 @@ Logs are stored in the `logs/` directory:
 - `POST /api/ssh-terminal/<hostname>` - Start SSH terminal for a host
 - `GET /api/ssh-terminals` - List active SSH terminals
 - `GET /api/gpu-info/<hostname>` - Get GPU information via nvidia-smi
+- `GET /api/gpu-topo-info/<hostname>` - Get GPU topology information via nvidia-smi topo -m
+- `GET /api/docker-info/<hostname>` - Get Docker container information
+- `POST /api/docker-action/<hostname>` - Start/stop Docker containers
 - `GET /api/ping/<hostname>` - Check network connectivity via ping
 - `POST /api/nvtop-terminal/<hostname>` - Start nvtop terminal for a host
 - `GET /api/nvtop-terminals` - List active nvtop terminals

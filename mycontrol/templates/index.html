@@ -37,9 +37,16 @@
                                 <div class="host-name">{{ host.name }}</div>
                                 <div class="host-hostname">{{ host.hostname }}</div>
                             </div>
-                            <button class="ssh-btn-small" onclick="openSSHTerminal('{{ host.hostname }}', this)" title="Open SSH Terminal">
-                                SSH
-                            </button>
+                            <div class="terminal-buttons">
+                                <button class="ssh-btn-small" onclick="openSSHTerminal('{{ host.hostname }}', this)" title="Open SSH Terminal">
+                                    SSH
+                                </button>
+                                {% if host.status == 'on' %}
+                                <button class="nvtop-btn-small" onclick="openNvtopTerminal('{{ host.hostname }}', this)" title="Open nvtop terminal">
+                                    nvtop
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="status-row">
                             <div class="status {{ host.status }}">
@@ -76,10 +83,13 @@
                         {% if host.status == 'on' %}
                         <div class="gpu-actions">
                             <button class="gpu-btn-small" onclick="toggleGpuInfo('{{ host.hostname }}', this)" title="Show nvidia-smi output">
-                                nvidia-smi
+                                GPU Summary
                             </button>
-                            <button class="nvtop-btn-small" onclick="openNvtopTerminal('{{ host.hostname }}', this)" title="Open nvtop terminal">
-                                nvtop
+                            <button class="gpu-topo-btn-small" onclick="toggleGpuTopoInfo('{{ host.hostname }}', this)" title="Show nvidia-smi topology output">
+                                GPU Topology
+                            </button>
+                            <button class="docker-btn-small" onclick="toggleDockerInfo('{{ host.hostname }}', this)" title="Show Docker containers">
+                                Docker
                             </button>
                         </div>
                         {% endif %}
@@ -88,6 +98,20 @@
                             <div class="gpu-content">
                                 <div class="gpu-loading">Loading GPU information...</div>
                                 <pre class="gpu-output" style="display: none;"></pre>
+                            </div>
+                        </div>
+                        
+                        <div class="gpu-topo-section" id="gpu-topo-{{ host.hostname }}" style="display: none;">
+                            <div class="gpu-topo-content">
+                                <div class="gpu-topo-loading">Loading GPU topology information...</div>
+                                <pre class="gpu-topo-output" style="display: none;"></pre>
+                            </div>
+                        </div>
+                        
+                        <div class="docker-section" id="docker-{{ host.hostname }}" style="display: none;">
+                            <div class="docker-content">
+                                <div class="docker-loading">Loading Docker containers...</div>
+                                <div class="docker-output" style="display: none;"></div>
                             </div>
                         </div>
                         

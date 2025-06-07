@@ -281,6 +281,151 @@ function toggleGpuInfo(hostname, button) {
     }
 }
 
+function toggleGpuTopoInfo(hostname, button) {
+    const gpuTopoSection = document.getElementById('gpu-topo-' + hostname);
+    const gpuTopoOutput = gpuTopoSection.querySelector('.gpu-topo-output');
+    const gpuTopoLoading = gpuTopoSection.querySelector('.gpu-topo-loading');
+    
+    if (gpuTopoSection.style.display === 'none') {
+        // Show GPU topology section
+        gpuTopoSection.style.display = 'block';
+        button.textContent = 'Hide';
+        button.classList.add('expanded');
+        
+        // Show loading state
+        gpuTopoLoading.style.display = 'block';
+        gpuTopoOutput.style.display = 'none';
+        
+        // Fetch GPU topology information
+        fetch('/api/gpu-topo-info/' + encodeURIComponent(hostname), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            gpuTopoLoading.style.display = 'none';
+            gpuTopoOutput.style.display = 'block';
+            
+            if (data.success) {
+                gpuTopoOutput.textContent = data.output;
+                gpuTopoOutput.classList.remove('gpu-error');
+            } else {
+                gpuTopoOutput.textContent = 'Error: ' + data.message;
+                gpuTopoOutput.classList.add('gpu-error');
+            }
+        })
+        .catch(error => {
+            gpuTopoLoading.style.display = 'none';
+            gpuTopoOutput.style.display = 'block';
+            gpuTopoOutput.textContent = 'Error fetching GPU topology information: ' + error.message;
+            gpuTopoOutput.classList.add('gpu-error');
+            console.error('Error:', error);
+        });
+    } else {
+        // Hide GPU topology section
+        gpuTopoSection.style.display = 'none';
+        button.textContent = 'GPU Topology';
+        button.classList.remove('expanded');
+    }
+}
+
+function toggleDockerInfo(hostname, button) {
+    const dockerSection = document.getElementById('docker-' + hostname);
+    const dockerOutput = dockerSection.querySelector('.docker-output');
+    const dockerLoading = dockerSection.querySelector('.docker-loading');
+    
+    if (dockerSection.style.display === 'none') {
+        // Show Docker section
+        dockerSection.style.display = 'block';
+        button.textContent = 'Hide';
+        button.classList.add('expanded');
+        
+        // Show loading state
+        dockerLoading.style.display = 'block';
+        dockerOutput.style.display = 'none';
+        
+        // Fetch Docker information
+        fetch('/api/docker-info/' + encodeURIComponent(hostname), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            dockerLoading.style.display = 'none';
+            dockerOutput.style.display = 'block';
+            
+            if (data.success) {
+                dockerOutput.innerHTML = data.html;
+            } else {
+                dockerOutput.innerHTML = '<div class="gpu-error">Error: ' + data.message + '</div>';
+            }
+        })
+        .catch(error => {
+            dockerLoading.style.display = 'none';
+            dockerOutput.style.display = 'block';
+            dockerOutput.innerHTML = '<div class="gpu-error">Error fetching Docker information: ' + error.message + '</div>';
+            console.error('Error:', error);
+        });
+    } else {
+        // Hide Docker section
+        dockerSection.style.display = 'none';
+        button.textContent = 'Docker';
+        button.classList.remove('expanded');
+    }
+}
+
+function dockerAction(hostname, containerId, action, button) {
+    // Disable button and show loading state
+    button.disabled = true;
+    const originalText = button.textContent;
+    button.textContent = action === 'start' ? 'Starting...' : 'Stopping...';
+    
+    fetch('/api/docker-action/' + encodeURIComponent(hostname), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            container_id: containerId,
+            action: action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Refresh the Docker table to show updated status
+            const dockerSection = document.getElementById('docker-' + hostname);
+            if (dockerSection && dockerSection.style.display !== 'none') {
+                // Find the Docker button and trigger a refresh
+                const dockerButton = document.querySelector(`button[onclick*="toggleDockerInfo('${hostname}'"]`);
+                if (dockerButton && dockerButton.classList.contains('expanded')) {
+                    // Hide and show again to refresh
+                    dockerButton.click();
+                    setTimeout(() => {
+                        dockerButton.click();
+                    }, 500);
+                }
+            }
+        } else {
+            alert('Error: ' + data.message);
+            // Reset button state
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        alert('Error performing Docker action: ' + error.message);
+        console.error('Error:', error);
+        // Reset button state
+        button.disabled = false;
+        button.textContent = originalText;
+    });
+}
+
 function openNvtopTerminal(hostname, button) {
     // Disable button and show loading state
     button.disabled = true;

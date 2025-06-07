@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-01-07
+
+### Added
+- **Docker container management** - Complete Docker monitoring and control capabilities
+  - Docker containers table showing all containers with formatted information
+  - Start/Stop buttons for individual container management
+  - Real-time container status with color-coded indicators (running=green, exited=red, etc.)
+  - Container details including ID, name, image, status, ports, and creation date
+  - JSON-based parsing for reliable data extraction from `docker ps -a --format json`
+- **Enhanced GPU monitoring interface** - Improved button layout and organization
+  - GPU Summary button (renamed from nvidia-smi for clarity)
+  - GPU Topology button showing `nvidia-smi topo -m` output for multi-GPU systems
+  - Docker button integrated with GPU monitoring section
+  - Consistent button styling across all monitoring tools
+- **Terminal interface improvements** - Better organization of SSH and monitoring tools
+  - nvtop button moved to header next to SSH button for logical grouping
+  - Terminal buttons container with proper spacing and alignment
+  - Improved visual hierarchy for host management actions
+
+### Enhanced
+- **User interface refinements** - Better visual organization and usability
+  - Reorganized button layout for improved workflow
+  - Enhanced table styling with hover effects and alternating row colors
+  - Responsive action buttons with loading states and visual feedback
+  - Consistent color scheme across different monitoring sections
+- **API endpoints expansion** - Extended functionality for container management
+  - `/api/docker-info/<hostname>` - Retrieve Docker container information
+  - `/api/docker-action/<hostname>` - Start/stop Docker containers remotely
+  - JSON response format for structured data handling
+  - Comprehensive error handling and validation
+
+### Technical Improvements
+- Enhanced SSH command execution for Docker operations with proper timeout handling
+- Improved HTML table generation with structured data parsing
+- Better error messaging and user feedback for all Docker operations
+- Optimized refresh mechanism for real-time status updates
+
 ## [0.6.0] - 2025-01-07
 
 ### Added

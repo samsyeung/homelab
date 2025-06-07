@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import subprocess
 import json
 import logging
@@ -13,7 +13,7 @@ from libs.ssh_utils import get_host_uptimes
 from libs.grafana_utils import process_dashboards
 from libs.power_management import get_power_status, power_on_host
 from libs.network_utils import check_host_ping
-from libs.gpu_management import get_gpu_info_sync
+from libs.gpu_management import get_gpu_info_sync, get_gpu_topo_info_sync, get_docker_info_sync, parse_docker_output_to_html, docker_action_sync
 from libs.terminal_management import TerminalManager
 from libs.config_utils import load_config, find_host_by_hostname
 
@@ -314,6 +314,104 @@ def get_gpu_info(hostname):
     
     result = get_gpu_info_sync(ssh_host, ssh_username, ssh_password, ssh_timeout)
     return jsonify(result)
+
+@app.route('/api/gpu-topo-info/<hostname>')
+def get_gpu_topo_info(hostname):
+    """Get GPU topology information via SSH by running nvidia-smi topo -m"""
+    config = load_config()
+    hosts = config.get('hosts', [])
+    ssh_timeout = config.get('ssh_timeout', 10)
+    
+    # Find the host in config
+    target_host = find_host_by_hostname(hosts, hostname)
+    
+    if not target_host:
+        return jsonify({'success': False, 'message': 'Host not found in configuration'}), 404
+    
+    ssh_host = target_host.get('ssh_host')
+    ssh_username = target_host.get('ssh_username')
+    ssh_password = target_host.get('ssh_password')
+    
+    if not ssh_host:
+        return jsonify({'success': False, 'message': 'No SSH host configured for this server'}), 400
+    
+    if not ssh_username:
+        return jsonify({'success': False, 'message': 'No SSH username configured for this server'}), 400
+    
+    result = get_gpu_topo_info_sync(ssh_host, ssh_username, ssh_password, ssh_timeout)
+    return jsonify(result)
+
+@app.route('/api/docker-info/<hostname>')
+def get_docker_info(hostname):
+    """Get Docker containers information via SSH by running docker ps -a"""
+    config = load_config()
+    hosts = config.get('hosts', [])
+    ssh_timeout = config.get('ssh_timeout', 10)
+    
+    # Find the host in config
+    target_host = find_host_by_hostname(hosts, hostname)
+    
+    if not target_host:
+        return jsonify({'success': False, 'message': 'Host not found in configuration'}), 404
+    
+    ssh_host = target_host.get('ssh_host')
+    ssh_username = target_host.get('ssh_username')
+    ssh_password = target_host.get('ssh_password')
+    
+    if not ssh_host:
+        return jsonify({'success': False, 'message': 'No SSH host configured for this server'}), 400
+    
+    if not ssh_username:
+        return jsonify({'success': False, 'message': 'No SSH username configured for this server'}), 400
+    
+    result = get_docker_info_sync(ssh_host, ssh_username, ssh_password, ssh_timeout)
+    
+    if result['success']:
+        # Parse the docker output into HTML table
+        html_table = parse_docker_output_to_html(result['output'], hostname)
+        return jsonify({'success': True, 'html': html_table})
+    else:
+        return jsonify(result)
+
+@app.route('/api/docker-action/<hostname>', methods=['POST'])
+def docker_action(hostname):
+    """Perform Docker action (start/stop) on a container"""
+    try:
+        data = request.get_json()
+        container_id = data.get('container_id')
+        action = data.get('action')
+        
+        if not container_id or not action:
+            return jsonify({'success': False, 'message': 'Missing container_id or action'}), 400
+        
+        if action not in ['start', 'stop']:
+            return jsonify({'success': False, 'message': 'Invalid action. Must be start or stop'}), 400
+        
+        config = load_config()
+        hosts = config.get('hosts', [])
+        ssh_timeout = config.get('ssh_timeout', 10)
+        
+        # Find the host in config
+        target_host = find_host_by_hostname(hosts, hostname)
+        
+        if not target_host:
+            return jsonify({'success': False, 'message': 'Host not found in configuration'}), 404
+        
+        ssh_host = target_host.get('ssh_host')
+        ssh_username = target_host.get('ssh_username')
+        ssh_password = target_host.get('ssh_password')
+        
+        if not ssh_host:
+            return jsonify({'success': False, 'message': 'No SSH host configured for this server'}), 400
+        
+        if not ssh_username:
+            return jsonify({'success': False, 'message': 'No SSH username configured for this server'}), 400
+        
+        result = docker_action_sync(ssh_host, ssh_username, ssh_password, container_id, action, ssh_timeout)
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
 
 @app.route('/api/nvtop-terminal/<hostname>', methods=['POST'])
 def start_nvtop_terminal(hostname):

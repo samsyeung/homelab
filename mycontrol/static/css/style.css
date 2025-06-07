@@ -295,6 +295,7 @@ h1 {
     margin-top: 10px;
     display: flex;
     justify-content: center;
+    gap: 10px;
 }
 
 .gpu-btn-small {
@@ -362,6 +363,96 @@ h1 {
 }
 
 .gpu-error {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.nvtop-btn-small {
+    padding: 6px 12px;
+    background-color: #17a2b8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    min-width: 60px;
+    max-width: 80px;
+}
+
+.nvtop-btn-small:hover {
+    background-color: #138496;
+}
+
+.nvtop-btn-small:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.nvtop-btn-small.expanded {
+    background-color: #dc3545;
+}
+
+.nvtop-btn-small.expanded:hover {
+    background-color: #c82333;
+}
+
+.nvtop-section {
+    margin-top: 15px;
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+}
+
+.nvtop-content {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 12px;
+}
+
+.nvtop-loading {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 10px;
+}
+
+.nvtop-output {
+    margin: 0;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    background-color: #000;
+    color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 10px;
+    overflow-x: auto;
+    white-space: pre;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.nvtop-controls {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.stop-nvtop-btn {
+    padding: 6px 12px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.stop-nvtop-btn:hover {
+    background-color: #c82333;
+}
+
+.nvtop-error {
     color: #dc3545;
     font-weight: 500;
 }

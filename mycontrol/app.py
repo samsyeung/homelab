@@ -327,7 +327,11 @@ def start_ssh_terminal(hostname):
             '--interface', '127.0.0.1',  # Only bind to localhost for security
             '--once',  # Close after one client disconnects
             '--writable',  # Allow keyboard input
-            'ssh', ssh_host
+            'ssh', 
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            '-o', 'LogLevel=ERROR',
+            ssh_host
         ]
         
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -462,6 +466,134 @@ def get_gpu_info(hostname):
     except Exception as e:
         app.logger.error(f"Error getting GPU info for {hostname}: {e}")
         return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
+
+# Global dict to track nvtop processes
+nvtop_processes = {}
+
+@app.route('/api/nvtop-stream/<hostname>')
+def nvtop_stream(hostname):
+    """Stream nvtop output via Server-Sent Events"""
+    config = load_config()
+    hosts = config.get('hosts', [])
+    
+    # Find the host in config
+    target_host = None
+    for host in hosts:
+        if host.get('ipmi_host') == hostname or host.get('ssh_host') == hostname:
+            target_host = host
+            break
+    
+    if not target_host:
+        return "data: " + json.dumps({"type": "error", "message": "Host not found"}) + "\n\n"
+    
+    ssh_host = target_host.get('ssh_host')
+    ssh_username = target_host.get('ssh_username')
+    ssh_password = target_host.get('ssh_password')
+    
+    if not ssh_host or not ssh_username:
+        return "data: " + json.dumps({"type": "error", "message": "SSH configuration missing"}) + "\n\n"
+    
+    def generate():
+        import subprocess
+        import select
+        import os
+        import signal
+        
+        try:
+            # Start SSH connection with nvtop
+            ssh_cmd = [
+                'ssh',
+                '-o', 'StrictHostKeyChecking=no',
+                '-o', 'UserKnownHostsFile=/dev/null',
+                '-o', 'LogLevel=ERROR',
+                f'{ssh_username}@{ssh_host}',
+                'nvtop', '--color=never'  # Disable colors for clean output
+            ]
+            
+            # Use sshpass if password is provided
+            if ssh_password:
+                ssh_cmd = ['sshpass', '-p', ssh_password] + ssh_cmd
+            
+            process = subprocess.Popen(
+                ssh_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                bufsize=0
+            )
+            
+            # Store process for cleanup
+            nvtop_processes[hostname] = process
+            
+            yield "data: " + json.dumps({"type": "status", "message": "Connected"}) + "\n\n"
+            
+            # Read output in real-time
+            while True:
+                # Check if process is still running
+                if process.poll() is not None:
+                    break
+                
+                # Use select to check for available data
+                ready, _, _ = select.select([process.stdout], [], [], 1.0)
+                
+                if ready:
+                    output = process.stdout.read(1024)
+                    if output:
+                        yield "data: " + json.dumps({"type": "output", "content": output}) + "\n\n"
+                else:
+                    # Send keepalive
+                    yield "data: " + json.dumps({"type": "keepalive"}) + "\n\n"
+                
+                # Check if client disconnected
+                if hostname not in nvtop_processes:
+                    break
+            
+        except FileNotFoundError:
+            yield "data: " + json.dumps({"type": "error", "message": "sshpass not found. Please install sshpass for password authentication."}) + "\n\n"
+        except Exception as e:
+            yield "data: " + json.dumps({"type": "error", "message": str(e)}) + "\n\n"
+        finally:
+            # Cleanup
+            if hostname in nvtop_processes:
+                try:
+                    nvtop_processes[hostname].terminate()
+                    nvtop_processes[hostname].wait(timeout=5)
+                except:
+                    try:
+                        nvtop_processes[hostname].kill()
+                    except:
+                        pass
+                del nvtop_processes[hostname]
+    
+    return app.response_class(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*'
+        }
+    )
+
+@app.route('/api/nvtop-stop/<hostname>', methods=['POST'])
+def stop_nvtop(hostname):
+    """Stop nvtop stream for a specific host"""
+    if hostname in nvtop_processes:
+        try:
+            process = nvtop_processes[hostname]
+            process.terminate()
+            process.wait(timeout=5)
+        except:
+            try:
+                process.kill()
+            except:
+                pass
+        finally:
+            del nvtop_processes[hostname]
+        
+        return jsonify({'success': True, 'message': 'nvtop stream stopped'})
+    else:
+        return jsonify({'success': False, 'message': 'No active nvtop stream found'})
 
 if __name__ == '__main__':
     config = load_config()

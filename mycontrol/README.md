@@ -9,6 +9,7 @@ A Flask web application for monitoring remote host power status via IPMI.
 - Power on hosts remotely via IPMI when they are powered off
 - **Web-based SSH terminals** - Direct SSH access to servers through the browser
 - **GPU monitoring** - View nvidia-smi output via expandable sections
+- **Real-time nvtop streaming** - Live GPU monitoring with continuous updates
 - Query IPMI using lanplus protocol
 - Asynchronous SSH connections for fast uptime retrieval
 - Configuration via JSON file
@@ -195,6 +196,8 @@ Logs are stored in the `logs/` directory:
 - `POST /api/ssh-terminal/<hostname>` - Start SSH terminal for a host
 - `GET /api/ssh-terminals` - List active SSH terminals
 - `GET /api/gpu-info/<hostname>` - Get GPU information via nvidia-smi
+- `GET /api/nvtop-stream/<hostname>` - Stream real-time nvtop output via SSE
+- `POST /api/nvtop-stop/<hostname>` - Stop nvtop streaming for a host
 
 ## Process Management
 

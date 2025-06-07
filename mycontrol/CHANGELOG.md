@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-01-07
+
+### Added
+- **Real-time nvtop streaming** - Live GPU monitoring with expandable sections
+  - nvtop button positioned next to nvidia-smi for easy access
+  - Server-Sent Events (SSE) for real-time streaming output
+  - Black terminal-style interface with auto-scrolling
+  - Manual stop controls and automatic cleanup
+  - Proper SSH process management and error handling
+- **Enhanced SSH terminal interface** - Improved user experience
+  - Custom wrapper with close button in terminal header
+  - Professional dark header design with hostname display
+  - Always-visible close button for easy session termination
+  - Safari popup blocker compatibility maintained
+- **Improved GPU monitoring layout** - Better button organization
+  - Side-by-side placement of nvidia-smi and nvtop buttons
+  - Consistent styling and responsive design
+  - Enhanced error handling and user feedback
+
+### Fixed
+- SSH terminal connection issues with host key algorithms
+- Popup blocking in Safari browser for SSH terminals
+- Improved SSH connection reliability with proper options
+
+### Technical Improvements
+- Server-Sent Events implementation for real-time data streaming
+- Process lifecycle management for nvtop SSH sessions
+- Enhanced error handling and connection management
+- Better resource cleanup and memory management
+
 ## [0.2.0] - 2025-01-07
 
 ### Added

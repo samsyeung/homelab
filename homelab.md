@@ -18,6 +18,6 @@ My home lab was encouraged and inspired by [makerun/nerdbox](https://gitlab.com/
 
 It was build primarily to setup and learn about AI.  
 
-![home lab photo](assets/IMG_6425.jpg "Home Lab Photo")
+![home lab photo](assets/IMG_6521.jpg "Home Lab Photo")
 
 

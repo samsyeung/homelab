@@ -53,6 +53,7 @@ scrape_configs:
       - lab.yeungs.net:9323
 
   - job_name: "cadvisor"
+    metrics_path: /metrics
     static_configs:
     - targets:
       - lab.yeungs.net:8080

@@ -1,0 +1,84 @@
+---
+- name: Deploy Victoria Logs with native syslog ingestion
+  hosts: victoria_logs
+  gather_facts: yes
+
+  vars:
+    victoria_logs_version: "v1.49.0"
+    victoria_logs_arch: "amd64"
+    victoria_logs_binary_path: "/usr/local/bin/victoria-logs"
+    victoria_logs_data_path: "/var/lib/victoria-logs"
+    victoria_logs_port: 9428
+    victoria_logs_syslog_port: 514
+    victoria_logs_retention: "6"  # 6 months
+
+  tasks:
+    - name: Download Victoria Logs binary
+      ansible.builtin.get_url:
+        url: "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/{{ victoria_logs_version }}/victoria-logs-linux-{{ victoria_logs_arch }}-{{ victoria_logs_version }}.tar.gz"
+        dest: "/tmp/victoria-logs.tar.gz"
+        mode: "0644"
+
+    - name: Extract Victoria Logs binary
+      ansible.builtin.unarchive:
+        src: "/tmp/victoria-logs.tar.gz"
+        dest: "/usr/local/bin"
+        remote_src: yes
+        mode: "0755"
+
+    - name: Rename Victoria Logs binary to correct name
+      ansible.builtin.command:
+        cmd: "mv /usr/local/bin/victoria-logs-prod /usr/local/bin/victoria-logs"
+        removes: "/usr/local/bin/victoria-logs-prod"
+        creates: "/usr/local/bin/victoria-logs"
+
+    - name: Create Victoria Logs data directory
+      ansible.builtin.file:
+        path: "{{ victoria_logs_data_path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Deploy Victoria Logs systemd service
+      ansible.builtin.copy:
+        content: |
+          [Unit]
+          Description=Victoria Logs
+          After=network.target
+
+          [Service]
+          ExecStart={{ victoria_logs_binary_path }} \
+            --storageDataPath={{ victoria_logs_data_path }} \
+            --httpListenAddr=:{{ victoria_logs_port }} \
+            --syslog.listenAddr.tcp=:{{ victoria_logs_syslog_port }} \
+            --syslog.listenAddr.udp=:{{ victoria_logs_syslog_port }} \
+            --retentionPeriod={{ victoria_logs_retention }}
+          Restart=on-failure
+          User=root
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: "/etc/systemd/system/victoria-logs.service"
+        owner: root
+        group: root
+        mode: "0644"
+      notify:
+        - daemon-reload
+        - enable-victoria-logs
+
+    - name: Enable Victoria Logs service
+      ansible.builtin.systemd:
+        name: victoria-logs
+        enabled: yes
+        state: started
+
+  handlers:
+    - name: daemon-reload
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+    - name: enable-victoria-logs
+      ansible.builtin.systemd:
+        name: victoria-logs
+        daemon_reload: yes

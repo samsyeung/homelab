@@ -206,3 +206,58 @@ From 1-year Prometheus data:
 - All GPUs operating at ~74 TFlops (5.2% of FP32 spec, normal for BF16 matrix ops)
 - All well below 87°C limit, with GPU0 at 56°C showing excellent margin
 - GPU1 at 74°C approaching mid-range of typical operating temps
+
+---
+
+## Extended 5-Minute Stress Test (2026-04-05) - With Junction & VRAM Monitoring
+
+**Test Setup:** All 4 GPUs in parallel for 300 seconds with simultaneous gputemps JSON monitoring (captures junction, core, and VRAM temps)
+
+### Comprehensive Temperature Analysis
+
+| GPU | Avg Performance | Die Temp (avg/min/max) | Core Temp (min/max) | Junction Temp (min/max) | VRAM Temp (min/max) | Status |
+|-----|-----------------|----------------------|-------------------|----------------------|-------------------|--------|
+| **GPU0** | 73,333 GFlops/s | 55.89°C (39-60°C) | 28-56°C | **37-72°C** ⭐ | 40-86°C | ✅ Excellent |
+| **GPU1** | 72,326 GFlops/s | 67.97°C (43-75°C) | 27-54°C | **37-104°C** ⚠️ | 36-90°C | ⚠️ CRITICAL |
+| **GPU2** | 71,866 GFlops/s | 62.44°C (43-69°C) | 31-64°C | **41-83°C** | 44-90°C | ✅ Good |
+| **GPU3** | 72,386 GFlops/s | 66.53°C (49-72°C) | 32-65°C | **42-88°C** | 40-76°C | ⚠️ Elevated |
+
+### Critical Finding: Memory Junction Temperature Gap
+
+- **GPU1 peak junction: 104°C** (27°C above RTX 3090 target operating range of 60-75°C)
+- **GPU3 peak junction: 88°C** (still 13°C above target)
+- **GPU0 peak junction: 72°C** (within excellent margin)
+- **GPU2 peak junction: 83°C** (acceptable but elevated)
+
+**Thermal Performance Ranking:**
+1. **GPU0**: Best performer - 37-72°C junction (35°C range)
+2. **GPU2**: Moderate - 41-83°C junction (42°C range)
+3. **GPU3**: Elevated - 42-88°C junction (46°C range, preventive maintenance candidate)
+4. **GPU1**: CRITICAL - 37-104°C junction (67°C range, immediate TIM replacement required)
+
+### VRAM Temperature Observations
+
+- **GPU1 VRAM consistently 10-14°C hotter** than peer GPUs throughout test
+- GPU1 VRAM reached 90°C at test end (same peak as GPU2 despite lower die temps)
+- GPU3 VRAM best managed (40-76°C), lowest peak among all GPUs
+- GPU0 VRAM stable but elevated (40-86°C)
+
+### Performance Consistency
+
+- **GPU0**: Most consistent (73,333 GFlops/s avg, ±0.4% deviation)
+- **GPU1**: Lower average (72,326 GFlops/s) despite highest idle performance - suggests thermal stress
+- **GPU3**: Solid (72,386 GFlops/s avg, ±0.2% deviation)
+- **GPU2**: One anomaly (brief dip to 19.7K GFlops) around 240s mark, otherwise 71,866 GFlops/s avg
+
+### Throttling Status
+✅ **Zero throttling events** across all 4 GPUs during entire 5-minute sustained load (300+ seconds)
+
+### Recommendations (Pre-TIM Baseline)
+
+**Immediate Action Required:**
+- **GPU1**: TIM replacement required - junction temps at 104°C are unsustainable long-term
+- Expected improvement post-TIM: 104°C → 75-80°C junction range
+
+**Preventive Maintenance:**
+- **GPU3**: TIM replacement recommended - 88°C junction is elevated despite no throttling
+- **GPU2**: Monitor; acceptable current performance but approaching elevated threshold

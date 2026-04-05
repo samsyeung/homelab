@@ -11,9 +11,10 @@
 #include <signal.h>
 #include <termios.h>
 #include <time.h>
+#include <sys/ioctl.h>
 
 #define REFRESH_DURATION 1
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 2048
 
 #define HOTSPOT_REGISTER_OFFSET 0x0002046C
 #define VRAM_REGISTER_OFFSET 0x0000E2A8
@@ -35,6 +36,8 @@ const uint32_t JUNCTION_TEMP_DANGER = 95;
 const uint32_t VRAM_TEMP_WARN = 80;
 const uint32_t VRAM_TEMP_DANGER = 95;
 
+#define ELAPSED_BLANK ((uint32_t)-1)
+
 static volatile sig_atomic_t running = 1;
 static struct termios orig_termios;
 
@@ -45,7 +48,8 @@ typedef enum {
 
 typedef enum {
     MODE_CONTINUOUS,
-    MODE_ONCE
+    MODE_ONCE,
+    MODE_APPEND
 } OutputMode;
 
 typedef struct {
@@ -66,6 +70,11 @@ typedef struct {
     uint32_t gpu_temp;
     uint32_t junction_temp;
     uint32_t vram_temp;
+    uint32_t fan_speed;
+    uint32_t power_w;
+    uint32_t gpu_util;
+    uint32_t mem_util;
+    float vram_used_gb;
 } GpuDevice;
 
 static int check_root_privileges(void) {
@@ -131,15 +140,25 @@ static const char* get_temp_color(uint32_t temp, uint32_t warn, uint32_t danger)
     return COLOR_GREEN;
 }
 
-static void print_gpu_info(Context *ctx, unsigned int index, GpuDevice *gpu) {
-    buffer_append(ctx, "%u %s %s%3u°C%s  %s %s%3u°C%s  %s %s%3u°C%s  %s\n",
-        index, SEPARATOR,
+static void print_gpu_info(Context *ctx, unsigned int index, GpuDevice *gpu, uint32_t elapsed) {
+    char tbuf[8];
+    if (elapsed == ELAPSED_BLANK)
+        snprintf(tbuf, sizeof(tbuf), "    ");
+    else
+        snprintf(tbuf, sizeof(tbuf), "%4u", elapsed > 9999u ? 9999u : elapsed);
+    buffer_append(ctx, "%s %s %3u %s %s%3u°C%s  %s %s%3u°C%s  %s %s%3u°C%s  %s  %3u%%  %s %3uW   %s  %3u%%  %s  %3u%%  %s %4.1fGB %s\n",
+        tbuf, SEPARATOR, index, SEPARATOR,
         get_temp_color(gpu->gpu_temp, GPU_TEMP_WARN, GPU_TEMP_DANGER),
         gpu->gpu_temp, COLOR_RESET, SEPARATOR,
         get_temp_color(gpu->junction_temp, JUNCTION_TEMP_WARN, JUNCTION_TEMP_DANGER),
         gpu->junction_temp, COLOR_RESET, SEPARATOR,
         get_temp_color(gpu->vram_temp, VRAM_TEMP_WARN, VRAM_TEMP_DANGER),
-        gpu->vram_temp, COLOR_RESET, SEPARATOR);
+        gpu->vram_temp, COLOR_RESET, SEPARATOR,
+        gpu->fan_speed, SEPARATOR,
+        gpu->power_w, SEPARATOR,
+        gpu->gpu_util, SEPARATOR,
+        gpu->mem_util, SEPARATOR,
+        gpu->vram_used_gb, SEPARATOR);
 }
 
 static int init_pci(Context *ctx) {
@@ -244,6 +263,22 @@ static int get_gpu_temps(Context *ctx, unsigned int index, GpuDevice *gpu) {
         (get_device_pci_info(ctx, gpu->device, &gpu->pci_info) < 0))
         return -1;
 
+    nvmlDeviceGetFanSpeed(gpu->device, &gpu->fan_speed);
+
+    uint32_t power_mw = 0;
+    if (nvmlDeviceGetPowerUsage(gpu->device, &power_mw) == NVML_SUCCESS)
+        gpu->power_w = power_mw / 1000;
+
+    nvmlUtilization_t util = {0};
+    if (nvmlDeviceGetUtilizationRates(gpu->device, &util) == NVML_SUCCESS) {
+        gpu->gpu_util = util.gpu;
+        gpu->mem_util = util.memory;
+    }
+
+    nvmlMemory_t mem = {0};
+    if (nvmlDeviceGetMemoryInfo(gpu->device, &mem) == NVML_SUCCESS)
+        gpu->vram_used_gb = (float)mem.used / (1024.0f * 1024.0f * 1024.0f);
+
     for (struct pci_dev *dev = ctx->pacc->devices; dev; dev = dev->next) {
         pci_fill_info(dev, PCI_FILL_IDENT | PCI_FILL_BASES);
 
@@ -269,19 +304,20 @@ static int get_gpu_temps(Context *ctx, unsigned int index, GpuDevice *gpu) {
 }
 
 static int monitor_temperatures_table(Context *ctx) {
-    static int refresh_counter = 0;
     int valid_readings = 0;
+    char timebuf[32];
+    time_t now = time(NULL);
+    strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %H:%M:%S", localtime(&now));
 
     ctx->buffer_pos = 0;
-    refresh_counter = refresh_counter == 0 ? 1 : 0;
-    buffer_append(ctx, "\n%s", refresh_counter == 0 ? "* " : "  ");
-    buffer_append(ctx, "%s  CORE  %s  JUNC  %s  VRAM  %s\n",
-      SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR);
+    buffer_append(ctx, "\n%s\n", timebuf);
+    buffer_append(ctx, "   T %s GPU %s  CORE  %s  JUNC  %s  VRAM  %s  FAN   %s POWER  %s  UTIL  %s  MEM   %s VRAM GB%s\n",
+      SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR);
 
     for (unsigned int i = 0; i < ctx->device_count; i++) {
         GpuDevice gpu = {0};
         if (get_gpu_temps(ctx, i, &gpu) != 0) return -1;
-        print_gpu_info(ctx, i, &gpu);
+        print_gpu_info(ctx, i, &gpu, i == 0 ? 0 : ELAPSED_BLANK);
         valid_readings++;
     }
 
@@ -303,8 +339,9 @@ static int monitor_temperatures_json(Context *ctx) {
         if (i > 0) {
             buffer_append(ctx, ",");
         }
-        buffer_append(ctx, "{\"index\":%u,\"core\":%u,\"junction\":%u,\"vram\":%u}",
-               i, gpu.gpu_temp, gpu.junction_temp, gpu.vram_temp);
+        buffer_append(ctx, "{\"index\":%u,\"core\":%u,\"junction\":%u,\"vram\":%u,\"fan\":%u,\"power_w\":%u,\"gpu_util\":%u,\"mem_util\":%u,\"vram_used_gb\":%.2f}",
+               i, gpu.gpu_temp, gpu.junction_temp, gpu.vram_temp,
+               gpu.fan_speed, gpu.power_w, gpu.gpu_util, gpu.mem_util, gpu.vram_used_gb);
     }
     buffer_append(ctx, "]}");
     printf("%s\n", ctx->output_buffer);
@@ -371,6 +408,59 @@ static int run_json_loop(Context *ctx) {
     return 0;
 }
 
+static int get_terminal_rows(void) {
+    struct winsize ws;
+    if (isatty(STDOUT_FILENO) && ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 0)
+        return ws.ws_row;
+    return 24;
+}
+
+static int monitor_temperatures_append(Context *ctx) {
+    static int rows_since_header = 0;
+    static time_t header_time = 0;
+    int page_height = get_terminal_rows();
+
+    time_t now = time(NULL);
+
+    if (rows_since_header == 0) {
+        header_time = now;
+        char timebuf[32];
+        strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %H:%M:%S", localtime(&now));
+        ctx->buffer_pos = 0;
+        buffer_append(ctx, "%s\n", timebuf);
+        buffer_append(ctx, "   T %s GPU %s  CORE  %s  JUNC  %s  VRAM  %s  FAN   %s POWER  %s  UTIL  %s  MEM   %s VRAM GB%s\n",
+            SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR, SEPARATOR);
+        printf("%s", ctx->output_buffer);
+        fflush(stdout);
+    }
+
+    ctx->buffer_pos = 0;
+    uint32_t elapsed = (uint32_t)(now - header_time);
+    for (unsigned int i = 0; i < ctx->device_count; i++) {
+        GpuDevice gpu = {0};
+        if (get_gpu_temps(ctx, i, &gpu) != 0) return -1;
+        print_gpu_info(ctx, i, &gpu, i == 0 ? elapsed : ELAPSED_BLANK);
+    }
+    printf("%s", ctx->output_buffer);
+    fflush(stdout);
+
+    rows_since_header += ctx->device_count;
+    if (rows_since_header + (int)ctx->device_count >= page_height - 2)
+        rows_since_header = 0;
+
+    return 0;
+}
+
+static int run_append_loop(Context *ctx) {
+    int elapsed = 0;
+    while (running) {
+        if (monitor_temperatures_append(ctx) != 0) return -1;
+        if (handle_input(REFRESH_DURATION * 1000)) break;
+        if (ctx->duration > 0 && ++elapsed >= ctx->duration) break;
+    }
+    return 0;
+}
+
 static void print_usage(const char *prog) {
     fprintf(stderr,
         "Usage: %s [OPTIONS]\n"
@@ -378,6 +468,7 @@ static void print_usage(const char *prog) {
         "Options:\n"
         "  --json              Output temperatures in JSON format\n"
         "  --once              Output temperatures once\n"
+        "  --append            Append rows to terminal, reprinting headers every page\n"
         "  --duration <secs>   Run for a fixed number of seconds then exit\n"
         "  --help              Show this help message and exit\n"
         "\n"
@@ -386,8 +477,9 @@ static void print_usage(const char *prog) {
         "  %s --json               Continuously output GPU temperatures in JSON format\n"
         "  %s --once               Output temperatures once in table format\n"
         "  %s --json --once        Output temperatures once in JSON format\n"
-        "  %s --json --duration 60 Output JSON temperatures for 60 seconds\n",
-        prog, prog, prog, prog, prog, prog);
+        "  %s --json --duration 60 Output JSON temperatures for 60 seconds\n"
+        "  %s --append             Continuously append GPU temperatures as a growing table\n",
+        prog, prog, prog, prog, prog, prog, prog);
 }
 
 int main(int argc, char *argv[]) {
@@ -400,6 +492,8 @@ int main(int argc, char *argv[]) {
             ctx.output_format = FORMAT_JSON;
         } else if (strcmp(argv[i], "--once") == 0) {
             ctx.output_mode = MODE_ONCE;
+        } else if (strcmp(argv[i], "--append") == 0) {
+            ctx.output_mode = MODE_APPEND;
         } else if (strcmp(argv[i], "--duration") == 0) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "--duration requires a value\n");
@@ -436,15 +530,17 @@ int main(int argc, char *argv[]) {
     }
 
     int result;
-    if (ctx.output_format == FORMAT_JSON && ctx.output_mode == MODE_CONTINUOUS) {
-        result = run_json_loop(&ctx);
-    } else if (ctx.output_format == FORMAT_JSON && ctx.output_mode == MODE_ONCE) {
+    if (ctx.output_format == FORMAT_JSON && ctx.output_mode == MODE_ONCE) {
         result = monitor_temperatures_json(&ctx);
-    } else if (ctx.output_format == FORMAT_TABLE && ctx.output_mode == MODE_CONTINUOUS) {
-        result = run_monitoring_loop(&ctx);
-    } else { // FORMAT_TABLE && MODE_ONCE
+    } else if (ctx.output_format == FORMAT_JSON) {
+        result = run_json_loop(&ctx);
+    } else if (ctx.output_mode == MODE_ONCE) {
         result = monitor_temperatures_table(&ctx);
         printf("\033[%dB\n", ctx.device_count + 2);
+    } else if (ctx.output_mode == MODE_APPEND) {
+        result = run_append_loop(&ctx);
+    } else {
+        result = run_monitoring_loop(&ctx);
     }
 
     cleanup_context(&ctx);

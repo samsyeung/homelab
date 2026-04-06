@@ -321,7 +321,7 @@ static int monitor_temperatures_table(Context *ctx) {
         valid_readings++;
     }
 
-    buffer_append(ctx, "\033[%dA", valid_readings + 2);
+    buffer_append(ctx, "\033[%dA", valid_readings + 3);
     printf("%s", ctx->output_buffer);
     fflush(stdout);
     return 0;

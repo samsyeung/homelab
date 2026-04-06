@@ -28,13 +28,13 @@ Thermal testing was performed using a 5-minute stress test running [gpu-fryer](h
 
 Initial testing revealed GPU1 had a critical thermal issue, with junction temperatures peaking at 104°C under load — 16°C above GPU3 (the next worst at 88°C) and well above the target range. GPU0 was the best performer (junction 37–72°C), while GPU2 and GPU3 were acceptable. No GPU throttled despite the elevated temperatures.
 
-GPU1's thermal interface material (TIM) was replaced, bringing its junction peak down from 104°C to 71°C (-33°C) and average die temperature from 67.97°C to 55.63°C. As a side effect, its average compute performance improved by 2.5% (+1,780 GFlops/s). GPU3's TIM was also replaced as a preventive measure. Following both replacements, all four GPUs operate well within safe thermal margins with no throttling under sustained load.
+GPU1's thermal interface material (TIM) was replaced, bringing its junction peak down from 104°C to 71°C (-33°C) and peak core temperature from 75°C to 54°C. As a side effect, compute performance improved by 2.5% (+1,780 GFlops/s). GPU3's TIM was also replaced as a preventive measure. Following both replacements, all four GPUs operate well within safe thermal margins with no throttling under sustained load.
 
-| GPU | GFlops/s (before) | GFlops/s (after) | Avg die temp (before) | Avg die temp (after) | Junction peak (before) | Junction peak (after) |
+| GPU | GFlops/s (before) | GFlops/s (after) | Peak core (before) | Peak core (after) | Peak junction (before) | Peak junction (after) |
 | --- | --- | --- | --- | --- | --- | --- |
-| GPU0 | 73,333 | 73,441 | 55.89°C | 55.70°C | 72°C | 72°C |
-| GPU1 | 72,326 | 74,106 (+2.5%) | 67.97°C | 55.63°C (-12°C) | 104°C | 71°C (-33°C) |
-| GPU2 | 71,866 | 72,378 | 62.44°C | 58.70°C | 83°C | 80°C |
-| GPU3 | 72,386 | 72,508 | 66.53°C | 64.22°C | 88°C | 86°C |
+| GPU0 | 73,333 | 73,441 | 60°C | 56°C | 72°C | 72°C |
+| GPU1 | 72,326 | 74,106 (+2.5%) | 75°C | 54°C (-21°C) | 104°C | 71°C (-33°C) |
+| GPU2 | 71,866 | 72,378 | 69°C | 64°C | 83°C | 80°C |
+| GPU3 | 72,386 | 72,508 | 72°C | 65°C | 88°C | 86°C |
 
 

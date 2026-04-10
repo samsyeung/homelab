@@ -33,9 +33,9 @@ scrape_configs:
     static_configs:
       - targets:
         - proxmox.yeungs.net:9100
+        - proxmox2.yeungs.net:9100
         - lab.yeungs.net:9100
         - lab2.yeungs.net:9100
-        - opn.yeungs.net:9100
 
   - job_name: "nvitop-exporter"
     static_configs:

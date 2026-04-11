@@ -34,6 +34,7 @@ scrape_configs:
       - targets:
         - proxmox.yeungs.net:9100
         - proxmox2.yeungs.net:9100
+        - proxmox3.yeungs.net:9100
         - lab.yeungs.net:9100
         - lab2.yeungs.net:9100
 
